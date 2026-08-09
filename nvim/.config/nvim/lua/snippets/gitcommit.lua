@@ -6,7 +6,7 @@ local t = ls.text_node
 local i = ls.insert_node
 
 return {
-  s("ccm", {
+  s("cmsg", {
     c(1, {
       t("feat"),
       t("fix"),
