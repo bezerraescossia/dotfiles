@@ -24,10 +24,32 @@ GNU Stow creates symlinks from subdirectories in this repository directly into y
 
 ## 🚀 Setting Up on a New Machine
 
+The recommended setup command is:
+
+```bash
+git clone <YOUR-GIT-REPO-URL> ~/dotfiles
+cd ~/dotfiles
+make install
+```
+
+`make install` checks for the command-line tools used by AstroNvim and tmux,
+links the `nvim`, `tmux`, and `wezterm` packages into your home directory, and
+installs the tmux Plugin Manager (TPM). WezTerm itself and the font are installed
+separately using the package manager for your operating system. Run
+`make install-tmux-plugins` after TPM is installed if you want to fetch the
+configured tmux plugins immediately.
+
 Follow these steps to restore your configuration on a fresh machine or secondary PC:
 
 ### 1. Install Prerequisites
-Ensure Git and GNU Stow are installed:
+Ensure these prerequisites are installed:
+
+- Git, GNU Stow, Neovim, and tmux
+- A C compiler, `tree-sitter` CLI, ripgrep (`rg`), fd, and lazygit
+- Go disk-usage (`gdu`) and bottom (`btm`)
+- Python 3, `uv`, and Node.js
+- A clipboard command (`xclip`, `xsel`, `wl-copy`, `pbcopy`, or `clip.exe`)
+- Hack Nerd Font (the configured WezTerm font)
 
 - **Debian / Ubuntu**:
   ```bash
