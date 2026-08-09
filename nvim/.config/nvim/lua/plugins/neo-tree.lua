@@ -1,4 +1,3 @@
----@type LazySpec
 return {
   "nvim-neo-tree/neo-tree.nvim",
   opts = {
@@ -34,4 +33,17 @@ return {
       use_libuv_file_watcher = true,
     },
   },
+  config = function(_, opts)
+    require("neo-tree").setup(opts)
+
+    -- Atualiza o status do Neo-tree sempre que o Neogit realiza um commit ou refresh
+    vim.api.nvim_create_autocmd("User", {
+      pattern = { "NeogitCommitComplete", "NeogitStatusRefreshed" },
+      callback = function()
+        if package.loaded["neo-tree.sources.manager"] then
+          require("neo-tree.sources.manager").refresh("filesystem")
+        end
+      end,
+    })
+  end,
 }
