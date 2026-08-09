@@ -1,36 +1,40 @@
 return {
   "L3MON4D3/LuaSnip",
-  version = "v2.*",
-  build = "make install_jsregexp",
-  config = function()
+  config = function(plugin, opts)
+    -- Run default AstroNvim setup
+    require("astronvim.plugins.configs.luasnip")(plugin, opts)
+    
     local ls = require("luasnip")
+    local s = ls.snippet
+    local t = ls.text_node
+    local i = ls.insert_node
+    local c = ls.choice_node
 
-    -- 1. Keymaps para navegar nos choices (próximo e anterior)
-    vim.keymap.set({ "i", "s" }, "<C-j>", function()
-      if ls.choice_active() then
-        ls.change_choice(1)
-      end
-    end, { silent = true, desc = "Cycle next choice" })
-
-    vim.keymap.set({ "i", "s" }, "<C-k>", function()
-      if ls.choice_active() then
-        ls.change_choice(-1)
-      end
-    end, { silent = true, desc = "Cycle previous choice" })
-
-    -- 2. Menu visual de seleção
-    vim.keymap.set({ "i", "s" }, "<C-e>", function()
-      if ls.choice_active() then
-        local ok, select_choice = pcall(require, "luasnip.extras.select_choice")
-        if ok then
-          select_choice()
-        end
-      end
-    end, { silent = true, desc = "Select LuaSnip choice from menu" })
-
-    -- 3. Carrega automaticamente todos os snippets da pasta lua/snippets/
-    require("luasnip.loaders.from_lua").lazy_load({
-      paths = vim.fn.stdpath("config") .. "/lua/snippets",
+    -- Add snippet to gitcommit filetype
+    ls.add_snippets("gitcommit", {
+      s("cc", {
+        -- 1. Choice node for Conventional Commit types
+        c(1, {
+          t("feat"),
+          t("fix"),
+          t("docs"),
+          t("style"),
+          t("refactor"),
+          t("perf"),
+          t("test"),
+          t("chore"),
+          t("build"),
+          t("ci"),
+        }),
+        -- 2. Optional scope
+        t("("), i(2, "scope"), t("): "),
+        -- 3. Commit message summary
+        i(3, "description"),
+        -- 4. Optional body / breaking changes breaking point
+        t({ "", "", "" }),
+        i(0),
+      }),
     })
   end,
 }
+

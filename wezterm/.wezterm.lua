@@ -8,19 +8,38 @@ config.window_background_opacity = 0.8
 config.hide_tab_bar_if_only_one_tab = true
 config.window_decorations = "RESIZE"
 
-config.front_end = 'OpenGL'
+config.front_end = "OpenGL"
 config.animation_fps = 60
 config.max_fps = 60
 config.cursor_blink_rate = 0
 
 config.wsl_domains = {
-  {
-    name = 'WSL:Ubuntu',
-    distribution = 'Ubuntu', -- ajuste pro nome da sua distro (wsl -l -v pra conferir)
-    default_cwd = '/home/bezer',
-  },
+	{
+		name = "WSL:Ubuntu",
+		distribution = "Ubuntu", -- ajuste pro nome da sua distro (wsl -l -v pra conferir)
+		default_cwd = "/home/bezer",
+	},
 }
-config.default_domain = 'WSL:Ubuntu'
+config.default_domain = "WSL:Ubuntu"
+config.keys = {
+	-- Desativa o disparo da ao de ShowDebugOverlay no CTRL+SHIFT+L
+	{
+		key = "L",
+		mods = "CTRL|SHIFT",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{
+		key = "l",
+		mods = "CTRL|SHIFT",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	-- Desativa caso alguma combinao com CTRL puro tente invocar
+	{
+		key = "l",
+		mods = "CTRL",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+}
 
 -- Dim unfocused windows so the focused one is obvious at a glance.
 local UNFOCUSED_FOREGROUND_TEXT_HSB = { hue = 1.0, saturation = 0.25, brightness = 0.45 }
@@ -55,3 +74,4 @@ wezterm.on("window-focus-changed", function(window)
 end)
 
 return config
+
