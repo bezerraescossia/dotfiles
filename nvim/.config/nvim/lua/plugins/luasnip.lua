@@ -1,8 +1,19 @@
 return {
   "L3MON4D3/LuaSnip",
-  config = function(plugin, opts)
-    -- Run default AstroNvim setup
-    require("astronvim.plugins.configs.luasnip")(plugin, opts)
+  config = function(_, opts)
+    if opts then require("luasnip").config.setup(opts) end
+
+    -- Load like AstroNvim's default config (astronvim.plugins.configs.luasnip),
+    -- except friendly-snippets' global.json contributes its snippets under both
+    -- specific filetypes (plaintext/markdown/tex/html) *and* "all"/"global" in
+    -- its package.json. LuaSnip already unions the "all" filetype into every
+    -- buffer, so loading "all"/"global" on top of that shows every global
+    -- snippet (time, datetime, ...) twice. Excluding them here drops only the
+    -- redundant copies; the snippets stay available via their specific
+    -- filetypes.
+    require("luasnip.loaders.from_vscode").lazy_load { exclude = { "all", "global" } }
+    require("luasnip.loaders.from_snipmate").lazy_load()
+    require("luasnip.loaders.from_lua").lazy_load()
 
     -- Load loose VSCode-style *.code-snippets files (no package.json manifest
     -- required, unlike from_vscode.lazy_load/load).
