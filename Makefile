@@ -3,7 +3,7 @@ SHELL := /bin/sh
 DOTFILES := $(CURDIR)
 HOME_DIR ?= $(HOME)
 STOW ?= stow
-PACKAGES := nvim tmux wezterm
+PACKAGES := nvim tmux wezterm lazygit
 TPM_DIR ?= $(HOME_DIR)/.tmux/plugins/tpm
 
 .PHONY: help install check-deps install-deps-ubuntu stow unstow restow install-tpm install-tmux-plugins \
