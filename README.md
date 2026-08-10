@@ -39,6 +39,17 @@ separately using the package manager for your operating system. Run
 `make install-tmux-plugins` after TPM is installed if you want to fetch the
 configured tmux plugins immediately.
 
+If you only want Neovim (skip tmux/WezTerm), run:
+
+```bash
+make install-nvim
+```
+
+This checks only the tools AstroNvim needs — `rg`, `fd`/`fdfind`, `tree-sitter`,
+`lazygit`, `gdu`, `btm`, `python3`, `uv`, `node`, a C compiler, and a clipboard
+tool — and links just the `nvim` package. `check-deps-nvim`, `stow-nvim`,
+`unstow-nvim`, and `restow-nvim` are also available individually.
+
 Follow these steps to restore your configuration on a fresh machine or secondary PC:
 
 ### 1. Install Prerequisites
