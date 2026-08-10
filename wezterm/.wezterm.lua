@@ -13,14 +13,19 @@ config.animation_fps = 60
 config.max_fps = 60
 config.cursor_blink_rate = 0
 
-config.wsl_domains = {
-	{
-		name = "WSL:Ubuntu",
-		distribution = "Ubuntu", -- ajuste pro nome da sua distro (wsl -l -v pra conferir)
-		default_cwd = "/home/bezer",
-	},
-}
-config.default_domain = "WSL:Ubuntu"
+-- WSL domain only applies when wezterm itself runs on Windows; on native
+-- Linux there's no WSL to talk to, so setting default_domain here would
+-- make wezterm fail to start looking for a nonexistent domain.
+if wezterm.target_triple:find("windows") then
+	config.wsl_domains = {
+		{
+			name = "WSL:Ubuntu",
+			distribution = "Ubuntu", -- ajuste pro nome da sua distro (wsl -l -v pra conferir)
+			default_cwd = "/home/bezer",
+		},
+	}
+	config.default_domain = "WSL:Ubuntu"
+end
 config.keys = {
 	-- Desativa o disparo da ao de ShowDebugOverlay no CTRL+SHIFT+L
 	{
