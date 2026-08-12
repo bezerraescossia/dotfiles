@@ -13,6 +13,9 @@ brew "python"
 brew "uv"
 brew "node"
 brew "gcc"
+brew "rust"
+brew "unzip"
+brew "lazydocker"
 
 # Homebrew on Linux does not provide macOS's built-in pbcopy/pbpaste.
 brew "xclip" if OS.linux?
