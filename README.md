@@ -10,13 +10,12 @@ GNU Stow creates symlinks from subdirectories in this repository directly into y
 
 ```
 ~/dotfiles/
-├── nvim/               # Package for Neovim configuration
-│   └── .config/
-│       └── nvim/       # Symlinked to ~/.config/nvim
-├── tmux/               # Package for Tmux configuration
-│   └── .tmux.conf      # Symlinked to ~/.tmux.conf
-├── wezterm/            # Package for Wezterm configuration
-│   └── .wezterm.lua    # Symlinked to ~/.wezterm.lua or Windows user profile
+├── home/               # One Stow package mirroring $HOME
+│   ├── .config/
+│   │   ├── nvim/       # Symlinked to ~/.config/nvim
+│   │   └── lazygit/    # Symlinked to ~/.config/lazygit
+│   ├── .tmux.conf      # Symlinked to ~/.tmux.conf
+│   └── .wezterm.lua    # Symlinked to ~/.wezterm.lua
 └── README.md
 ```
 
@@ -29,51 +28,22 @@ The recommended setup command is:
 ```bash
 git clone <YOUR-GIT-REPO-URL> ~/dotfiles
 cd ~/dotfiles
-make install
+brew bundle
+stow home
 ```
 
-`make install` checks for the command-line tools used by AstroNvim and tmux,
-links the `nvim`, `tmux`, and `wezterm` packages into your home directory, and
-installs the tmux Plugin Manager (TPM). WezTerm itself and the font are installed
-separately using the package manager for your operating system. Run
-`make install-tmux-plugins` after TPM is installed if you want to fetch the
-configured tmux plugins immediately.
-
-If you only want Neovim (skip tmux/WezTerm), run:
-
-```bash
-make install-nvim
-```
-
-This checks only the tools AstroNvim needs — `rg`, `fd`/`fdfind`, `tree-sitter`,
-`lazygit`, `gdu`, `btm`, `python3`, `uv`, `node`, a C compiler, and a clipboard
-tool — and links just the `nvim` package. `check-deps-nvim`, `stow-nvim`,
-`unstow-nvim`, and `restow-nvim` are also available individually.
+`brew bundle` installs the applications and command-line tools listed in
+[`Brewfile`](Brewfile). `stow home` then links every configuration into your
+home directory. On macOS it also installs WezTerm and Hack Nerd Font; on Linux,
+install a graphical WezTerm package separately if it is not available through
+your Homebrew setup.
 
 Follow these steps to restore your configuration on a fresh machine or secondary PC:
 
 ### 1. Install Prerequisites
-Ensure these prerequisites are installed:
-
-- Git, GNU Stow, Neovim, and tmux
-- A C compiler, `tree-sitter` CLI, ripgrep (`rg`), fd, and lazygit
-- Go disk-usage (`gdu`) and bottom (`btm`)
-- Python 3, `uv`, and Node.js
-- A clipboard command (`xclip`, `xsel`, `wl-copy`, `pbcopy`, or `clip.exe`)
-- Hack Nerd Font (the configured WezTerm font)
-
-- **Debian / Ubuntu**:
-  ```bash
-  sudo apt update && sudo apt install -y git stow
-  ```
-- **Arch Linux**:
-  ```bash
-  sudo pacman -S git stow
-  ```
-- **macOS** (Homebrew):
-  ```bash
-  brew install git stow
-  ```
+Ensure [Homebrew](https://brew.sh/) and the `brew bundle` command are
+installed. The `Brewfile` contains the full application and binary list, so no
+separate apt/pacman package list is needed.
 
 ### 2. Clone the Repository
 Clone this repository into your `$HOME` directory:
@@ -83,14 +53,12 @@ git clone <YOUR-GIT-REPO-URL> ~/dotfiles
 cd ~/dotfiles
 ```
 
-### 3. Link Configurations with Stow
-Run `stow` for all packages or specific packages you want to install:
+### 3. Install Applications and Link Configurations
+From the repository root:
 
 ```bash
-# Stow Linux / WSL packages
-stow nvim
-stow tmux
-stow wezterm  # Symlinks to ~/.wezterm.lua in WSL
+brew bundle
+stow home
 ```
 
 > **Note:** If target files already exist in your home directory (e.g. an existing default `~/.tmux.conf`), `stow` will report a conflict and refuse to overwrite them. Remove or back up those existing files before running `stow`.
@@ -107,14 +75,14 @@ To link your WezTerm config from this repo directly into Windows:
 Run this command inside your WSL shell:
 
 ```bash
-ln -sf ~/dotfiles/wezterm/.wezterm.lua /mnt/c/Users/$(whoami)/.wezterm.lua
+ln -sf ~/dotfiles/home/.wezterm.lua /mnt/c/Users/$(whoami)/.wezterm.lua
 ```
 
 ### Method B: Native Windows Symlink (CMD / PowerShell)
 If Windows native symlinking is required, open CMD in Windows:
 
 ```cmd
-cmd.exe /c "mklink C:\Users\%USERNAME%\.wezterm.lua \\wsl.localhost\Ubuntu\home\%USERNAME%\dotfiles\wezterm\.wezterm.lua"
+cmd.exe /c "mklink C:\Users\%USERNAME%\.wezterm.lua \\wsl.localhost\Ubuntu\home\%USERNAME%\dotfiles\home\.wezterm.lua"
 ```
 
 ---
@@ -124,46 +92,46 @@ cmd.exe /c "mklink C:\Users\%USERNAME%\.wezterm.lua \\wsl.localhost\Ubuntu\home\
 When you want to add a new configuration (e.g., `~/.zshrc`, `~/.gitconfig`, or `~/.config/alacritty`) to this repository, follow the GNU Stow mirroring pattern:
 
 ### Standard Rule
-Inside your `~/dotfiles` folder, create a package directory (e.g., `package-name/`) and replicate the relative path from `$HOME`.
+Inside `~/dotfiles/home`, mirror the relative path from `$HOME`.
 
 ---
 
 ### Example 1: Adding a file directly in `$HOME` (e.g. `~/.zshrc`)
 
-1. **Create the package folder**:
+1. **Create the file inside the home package**:
    ```bash
-   mkdir -p ~/dotfiles/zsh
+   mkdir -p ~/dotfiles/home
    ```
 
 2. **Move your config into the package folder**:
    ```bash
-   mv ~/.zshrc ~/dotfiles/zsh/.zshrc
+   mv ~/.zshrc ~/dotfiles/home/.zshrc
    ```
 
 3. **Symlink it with Stow**:
    ```bash
    cd ~/dotfiles
-   stow zsh
+   stow home
    ```
 
 ---
 
 ### Example 2: Adding a folder in `~/.config/` (e.g. `~/.config/alacritty`)
 
-1. **Create the package directory mirroring the `.config` subpath**:
+1. **Create the directory inside the home package**:
    ```bash
-   mkdir -p ~/dotfiles/alacritty/.config
+   mkdir -p ~/dotfiles/home/.config
    ```
 
 2. **Move your configuration folder into place**:
    ```bash
-   mv ~/.config/alacritty ~/dotfiles/alacritty/.config/
+   mv ~/.config/alacritty ~/dotfiles/home/.config/
    ```
 
 3. **Symlink it with Stow**:
    ```bash
    cd ~/dotfiles
-   stow alacritty
+   stow home
    ```
 
 ---
