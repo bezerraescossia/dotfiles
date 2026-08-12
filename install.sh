@@ -6,3 +6,4 @@ if ! command -v cc &> /dev/null; then
 fi
 
 brew bundle
+stow home
