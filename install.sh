@@ -3,23 +3,15 @@
 # setup.sh
 # Bootstraps a dev machine: build tools -> Homebrew -> brew bundle -> dotfiles (stow)
 #
-
 set -euo pipefail
-
 # ---------- logging helpers ----------
 LOG_FILE="${LOG_FILE:-/tmp/.setup-$(date +%Y%m%d-%H%M%S).log}"
 log()  { printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*" | tee -a "$LOG_FILE"; }
 die()  { log "❌ ERROR: $*"; exit 1; }
-
 trap 'die "Script failed at line $LINENO (last command: $BASH_COMMAND)"' ERR
-
 log "Log file: $LOG_FILE"
-
 # ---------- 1. System C compiler (Linux only) ----------
-# build-essential is a Debian/Ubuntu-apt concept; this block must not run on macOS
-# or on distros without apt, or it will fail loudly for no reason.
 OS="$(uname -s)"
-
 if [[ "$OS" == "Linux" ]]; then
   if command -v apt >/dev/null 2>&1; then
     if ! command -v cc >/dev/null 2>&1; then
@@ -42,16 +34,23 @@ elif [[ "$OS" == "Darwin" ]]; then
 else
   log "⚠️  Unrecognized OS '$OS'; skipping compiler bootstrap step."
 fi
-
 # ---------- 2. Homebrew ----------
+BREW_BIN=""
+if [[ -x "/opt/homebrew/bin/brew" ]]; then
+  BREW_BIN="/opt/homebrew/bin/brew"
+elif [[ -x "/usr/local/bin/brew" ]]; then
+  BREW_BIN="/usr/local/bin/brew"
+elif [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
+  BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
+fi
+
 if command -v brew >/dev/null 2>&1; then
   log "Homebrew is already installed: $(brew --version | head -n 1)"
+elif [[ -n "$BREW_BIN" ]]; then
+  log "Homebrew binary found at $BREW_BIN but not on PATH yet."
 else
   log "Homebrew not found. Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-  # Determine the brew prefix for this platform
-  BREW_BIN=""
   if [[ -x "/opt/homebrew/bin/brew" ]]; then
     BREW_BIN="/opt/homebrew/bin/brew"
   elif [[ -x "/usr/local/bin/brew" ]]; then
@@ -59,23 +58,33 @@ else
   elif [[ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
     BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
   fi
-
   [[ -n "$BREW_BIN" ]] || die "Homebrew install ran but no brew binary was found in the usual locations."
-
-  # Load brew into THIS session
-  eval "$("$BREW_BIN" shellenv)"
-
-  # Persist it for FUTURE sessions too (the original script only fixed the current shell)
-  SHELL_RC="$HOME/.$(basename "$SHELL")rc"
-  if ! grep -qs "brew shellenv" "$SHELL_RC" 2>/dev/null; then
-    echo "eval \"\$($BREW_BIN shellenv)\"" >> "$SHELL_RC"
-    log "Added brew shellenv to $SHELL_RC"
-  fi
-
-  command -v brew >/dev/null 2>&1 || die "Homebrew installation failed — brew still not on PATH."
-  log "Homebrew installed successfully: $(brew --version | head -n 1)"
+  log "Homebrew installed successfully."
 fi
 
+# NOTE: this runs regardless of which branch above we took (already-installed,
+# found-but-not-on-PATH, or freshly-installed). The old version of this script only
+# did `eval "$(brew shellenv)")` inside the "just installed" branch, so on a machine
+# that already had Homebrew installed, the running script's PATH never picked up
+# brew's bin dir — which meant e.g. `which zsh` later in the script (zsh comes from
+# the Brewfile via brew bundle) could silently fail to find the brew-installed zsh.
+if [[ -n "$BREW_BIN" ]]; then
+  eval "$("$BREW_BIN" shellenv)"
+fi
+command -v brew >/dev/null 2>&1 || die "brew is still not on PATH after setup."
+
+# Persist it for FUTURE sessions too (the original script only fixed the current shell).
+# NOTE: we write to BOTH .bashrc and .zshrc, not just "$HOME/.$(basename "$SHELL")rc",
+# because later in this script we chsh the user to zsh regardless of what $SHELL is
+# right now. If we only wrote to the current $SHELL's rc file, a bash user would get
+# brew shellenv in ~/.bashrc, then get switched to zsh, and zsh would never source it —
+# leaving brew-installed tools (nvim, lazygit, stow, ...) missing from PATH.
+for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+  if ! grep -qs "brew shellenv" "$rc" 2>/dev/null; then
+    echo "eval \"\$($BREW_BIN shellenv)\"" >> "$rc"
+    log "Added brew shellenv to $rc"
+  fi
+done
 # ---------- 3. brew bundle ----------
 log "Installing all dependencies via brew bundle..."
 if [[ -f "Brewfile" ]]; then
@@ -84,19 +93,39 @@ if [[ -f "Brewfile" ]]; then
 else
   log "⚠️  No Brewfile found in $(pwd); skipping 'brew bundle'."
 fi
-
+# Add zsh as default shell
+echo "$(which zsh)" | sudo tee -a /etc/shells
+chsh -s $(which zsh)
+if [[ -d "$HOME/powerlevel10k" ]]; then
+  log "powerlevel10k already cloned at ~/powerlevel10k; skipping clone."
+else
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k
+fi
+if ! grep -qs 'source ~/powerlevel10k/powerlevel10k.zsh-theme' ~/.zshrc 2>/dev/null; then
+  echo 'source ~/powerlevel10k/powerlevel10k.zsh-theme' >>~/.zshrc
+  log "Added powerlevel10k source line to ~/.zshrc"
+fi
 # ---------- 4. Dotfiles via GNU stow ----------
 log "Generating all config files..."
 if ! command -v stow >/dev/null 2>&1; then
   log "GNU stow not found; installing via brew..."
   brew install stow
 fi
-
 if [[ -d "home" ]]; then
   stow home
   log "Config files successfully created."
 else
   log "⚠️  'home' directory not found in $(pwd); skipping stow."
+fi
+
+# zsh does NOT read ~/.bash_profile automatically (that's a bash/sh login-shell convention),
+# so any aliases stowed into ~/.bash_profile would silently never load in an interactive
+# zsh session unless we explicitly source it from ~/.zshrc.
+if [[ -f "$HOME/.bash_profile" ]]; then
+  if ! grep -qs '\.bash_profile' "$HOME/.zshrc" 2>/dev/null; then
+    echo '[ -f ~/.bash_profile ] && source ~/.bash_profile' >> ~/.zshrc
+    log "Added ~/.bash_profile sourcing to ~/.zshrc so its aliases are available in zsh."
+  fi
 fi
 
 log "✅ Setup complete."

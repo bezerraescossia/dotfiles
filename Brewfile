@@ -17,6 +17,7 @@ brew "rust"
 brew "unzip"
 brew "lazydocker"
 brew "eza"
+brew "zsh"
 
 # Homebrew on Linux does not provide macOS's built-in pbcopy/pbpaste.
 brew "xclip" if OS.linux?
