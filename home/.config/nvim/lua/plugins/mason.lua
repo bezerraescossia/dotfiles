@@ -1,7 +1,3 @@
-if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
--- Customize Mason
-
 ---@type LazySpec
 return {
   -- use mason-tool-installer for automatically installing Mason packages
@@ -13,15 +9,18 @@ return {
       ensure_installed = {
         -- install language servers
         "lua-language-server",
+        "pyright",
 
         -- install formatters
         "stylua",
+        "black",
 
         -- install debuggers
         "debugpy",
 
         -- install any other package
         "tree-sitter-cli",
+        "flake8",
       },
     },
   },
