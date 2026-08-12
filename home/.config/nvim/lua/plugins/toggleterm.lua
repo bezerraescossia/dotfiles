@@ -14,6 +14,10 @@ return {
   opts = {
     direction = "float",
     on_open = function(term)
+      -- only auto-source into plain shells; terminals running a specific
+      -- command (e.g. lazygit via `<Leader>gg`) are TUIs that interpret
+      -- raw keystrokes as hotkeys, not shell input
+      if term.cmd then return end
       if term.venv_activated then return end
       local activate = find_venv_activate()
       if not activate then return end
