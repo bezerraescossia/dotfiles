@@ -29,3 +29,4 @@ fi
 alias ll='eza --icons -l'
 alias la='eza --icons -la'
 alias lt='eza --icons -T -L'
+alias nv='nvim .'
