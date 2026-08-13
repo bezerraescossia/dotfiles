@@ -112,7 +112,7 @@ if ! command -v stow >/dev/null 2>&1; then
   brew install stow
 fi
 if [[ -d "home" ]]; then
-  stow home
+  stow -t "$HOME" home
   log "Config files successfully created."
 else
   log "⚠️  'home' directory not found in $(pwd); skipping stow."
