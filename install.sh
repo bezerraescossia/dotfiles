@@ -4,6 +4,20 @@
 # Bootstraps a dev machine: build tools -> Homebrew -> brew bundle -> dotfiles (stow)
 #
 set -euo pipefail
+# ---------- flags ----------
+# --nvim: minimal mode for containers that only need to run Neovim + its
+# tooling (e.g. cloning this repo inside a container to develop with nvim).
+# Skips the full Brewfile and the zsh/powerlevel10k shell takeover, installing
+# only the brew formulas home/.config/nvim and its Mason-managed tools
+# (LSPs/formatters/debuggers) actually need, then stows dotfiles as usual.
+NVIM_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --nvim) NVIM_ONLY=1 ;;
+    *) ;;
+  esac
+done
+NVIM_BREW_PACKAGES=(git stow neovim ripgrep fd tree-sitter node unzip lazygit xclip gcc rust)
 # ---------- logging helpers ----------
 LOG_FILE="${LOG_FILE:-/tmp/.setup-$(date +%Y%m%d-%H%M%S).log}"
 log()  { printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*" | tee -a "$LOG_FILE"; }
@@ -86,24 +100,30 @@ for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
   fi
 done
 # ---------- 3. brew bundle ----------
-log "Installing all dependencies via brew bundle..."
-if [[ -f "Brewfile" ]]; then
-  brew bundle
-  log "Brew bundle installed successfully."
+if [[ "$NVIM_ONLY" -eq 1 ]]; then
+  log "--nvim mode: installing only the brew formulas nvim needs: ${NVIM_BREW_PACKAGES[*]}"
+  brew install "${NVIM_BREW_PACKAGES[@]}"
+  log "Nvim brew formulas installed successfully."
 else
-  log "⚠️  No Brewfile found in $(pwd); skipping 'brew bundle'."
-fi
-# Add zsh as default shell
-echo "$(which zsh)" | sudo tee -a /etc/shells
-chsh -s $(which zsh)
-if [[ -d "$HOME/powerlevel10k" ]]; then
-  log "powerlevel10k already cloned at ~/powerlevel10k; skipping clone."
-else
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k
-fi
-if ! grep -qs 'source ~/powerlevel10k/powerlevel10k.zsh-theme' ~/.zshrc 2>/dev/null; then
-  echo 'source ~/powerlevel10k/powerlevel10k.zsh-theme' >>~/.zshrc
-  log "Added powerlevel10k source line to ~/.zshrc"
+  log "Installing all dependencies via brew bundle..."
+  if [[ -f "Brewfile" ]]; then
+    brew bundle
+    log "Brew bundle installed successfully."
+  else
+    log "⚠️  No Brewfile found in $(pwd); skipping 'brew bundle'."
+  fi
+  # Add zsh as default shell
+  echo "$(which zsh)" | sudo tee -a /etc/shells
+  chsh -s $(which zsh)
+  if [[ -d "$HOME/powerlevel10k" ]]; then
+    log "powerlevel10k already cloned at ~/powerlevel10k; skipping clone."
+  else
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k
+  fi
+  if ! grep -qs 'source ~/powerlevel10k/powerlevel10k.zsh-theme' ~/.zshrc 2>/dev/null; then
+    echo 'source ~/powerlevel10k/powerlevel10k.zsh-theme' >>~/.zshrc
+    log "Added powerlevel10k source line to ~/.zshrc"
+  fi
 fi
 # ---------- 4. Dotfiles via GNU stow ----------
 log "Generating all config files..."
@@ -118,13 +138,15 @@ else
   log "⚠️  'home' directory not found in $(pwd); skipping stow."
 fi
 
-# zsh does NOT read ~/.bash_profile automatically (that's a bash/sh login-shell convention),
-# so any aliases stowed into ~/.bash_profile would silently never load in an interactive
-# zsh session unless we explicitly source it from ~/.zshrc.
-if [[ -f "$HOME/.bash_profile" ]]; then
-  if ! grep -qs '\.bash_profile' "$HOME/.zshrc" 2>/dev/null; then
-    echo '[ -f ~/.bash_profile ] && source ~/.bash_profile' >> ~/.zshrc
-    log "Added ~/.bash_profile sourcing to ~/.zshrc so its aliases are available in zsh."
+if [[ "$NVIM_ONLY" -eq 0 ]]; then
+  # zsh does NOT read ~/.bash_profile automatically (that's a bash/sh login-shell convention),
+  # so any aliases stowed into ~/.bash_profile would silently never load in an interactive
+  # zsh session unless we explicitly source it from ~/.zshrc.
+  if [[ -f "$HOME/.bash_profile" ]]; then
+    if ! grep -qs '\.bash_profile' "$HOME/.zshrc" 2>/dev/null; then
+      echo '[ -f ~/.bash_profile ] && source ~/.bash_profile' >> ~/.zshrc
+      log "Added ~/.bash_profile sourcing to ~/.zshrc so its aliases are available in zsh."
+    fi
   fi
 fi
 
