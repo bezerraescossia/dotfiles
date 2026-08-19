@@ -1,6 +1,6 @@
 ---
 name: sdd-clarify
-description: Identifies underspecified areas in a feature spec by asking up to 5 targeted clarification questions, and encodes the answers directly back into specs/NNN-feature/spec.md.
+description: Identifies underspecified areas in a feature spec by asking up to 5 targeted clarification questions, and encodes the answers directly back into .spec/[feature-dir]/spec.md. Scans an ML-first taxonomy (data availability, evaluation protocol, drift, fairness, compute budget) alongside the classic functional/UX categories.
 user_invocable: true
 ---
 
@@ -8,18 +8,30 @@ user_invocable: true
 
 This skill guides Claude to detect and reduce ambiguity or missing decisions in an existing feature specification, recording clarifications directly in the spec file.
 
-**Position in the SDD pipeline**: Specify → **Clarify** (optional) → Plan. This is expected to run — and complete — before `sdd-plan`. If the user explicitly says they're skipping clarification (e.g. an exploratory spike), you may proceed, but must warn that the risk of downstream rework increases. Input: `specs/NNN-feature/spec.md` (required — if missing, tell the user to run `sdd-specify` first; do not create a new spec here). Output: the same file, updated in place.
+**Position in the SDD pipeline**: Specify → **Clarify** (optional) → Plan. This is expected to run — and complete — before `sdd-plan`. If the user explicitly says they're skipping clarification (e.g. an exploratory spike), you may proceed, but must warn that the risk of downstream rework increases. Input: `.spec/[feature-dir]/spec.md` (required — if missing, tell the user to run `sdd-specify` first; do not create a new spec here). Output: the same file, updated in place.
 
 ---
 
 ## Step 1: Load Context
 
-1. Load `specs/NNN-feature/spec.md`. If ambiguous which feature, ask, or use the most recently modified `specs/` directory that has a `spec.md`.
-2. If it exists, load `docs/constitution.md` for governance constraints.
+1. Load `.spec/[feature-dir]/spec.md`. If ambiguous which feature, ask, or use the most recently modified `.spec/` directory that has a `spec.md`.
+2. If it exists, load `.spec/constitution.md` for governance constraints.
 
 ## Step 2: Scan for Ambiguity
 
 Perform a structured coverage scan against this taxonomy. For each category, mark internally: Clear / Partial / Missing.
+
+ML-first categories (check these before the classic ones, unless the spec explicitly opted out as non-ML):
+
+- **Data Availability & Quality**: source, approximate volume, labeling status/methodology, known gaps or biases.
+- **Evaluation Protocol**: train/validation/test split strategy (random vs temporal vs grouped), the baseline being beaten, which metric governs the go/no-go decision.
+- **Model/Approach Choice**: build vs. buy vs. fine-tune vs. prompt-only, and the baseline model or heuristic to compare against.
+- **Drift & Feedback Loops**: expected data/concept drift, retraining cadence, whether a feedback/ground-truth signal will exist in production.
+- **Fairness & Responsible AI**: protected attributes in scope, fairness constraints, explainability requirements.
+- **Compute & Cost Budget**: training/inference compute ceiling, latency and cost constraints on the serving path.
+- **Human-in-the-loop Fallback**: what happens on a low-confidence or rejected prediction — auto-block, route to a human, or proceed with a caveat.
+
+Classic categories (still apply to the product surface around the model, and fully to non-ML specs):
 
 - **Functional Scope & Behavior**: core user goals & success criteria, explicit out-of-scope declarations, role/persona differentiation.
 - **Domain & Data Model**: entities/attributes/relationships, identity & uniqueness rules, lifecycle/state transitions, scale assumptions.
@@ -32,7 +44,7 @@ Perform a structured coverage scan against this taxonomy. For each category, mar
 - **Completion Signals**: acceptance-criteria testability, measurable definition-of-done indicators.
 - **Misc / Placeholders**: TODO markers/unresolved decisions, ambiguous unquantified adjectives ("robust", "intuitive").
 
-For each Partial or Missing category, note it as a candidate question — unless the clarification wouldn't materially change implementation or validation strategy, or is better deferred to planning.
+For each Partial or Missing category, note it as a candidate question — unless the clarification wouldn't materially change implementation or validation strategy, or is better deferred to planning. When the spec explicitly states the feature is non-ML, skip the ML-first categories entirely rather than forcing them.
 
 ## Step 3: Build a Prioritized Question Queue (internal, max 5)
 
@@ -56,7 +68,7 @@ After each accepted answer (don't batch — write after every single one):
 
 1. On the first integration this session, add a `## Clarifications` section (right after the highest-level overview section) with a `### Session YYYY-MM-DD` subheading.
 2. Append `- Q: <question> → A: <final answer>` under it.
-3. Apply the clarification to the most relevant section(s): functional ambiguity → Functional Requirements; interaction/actor distinction → User Stories; data shape → Key Entities (add fields/types/relationships); non-functional constraint → Success Criteria (turn a vague adjective into a metric); edge case/negative flow → Edge Cases; terminology conflict → normalize the term across the spec (keep the old term once, parenthesized, only if necessary).
+3. Apply the clarification to the most relevant section(s): data availability/quality/labeling → Business & Data Understanding; evaluation protocol/model choice/metric → Model/ML Metrics under Success Criteria; drift/feedback-loop/fairness/human-in-the-loop → Risk Assessment (add or refine a row) and, if it changes scope, Non-Goals; compute/cost/latency budget → Success Criteria or Assumptions; functional ambiguity → Functional Requirements; interaction/actor distinction → User Stories; data shape → Key Entities (add fields/types/relationships); non-functional constraint → Success Criteria (turn a vague adjective into a metric); edge case/negative flow → Edge Cases; terminology conflict → normalize the term across the spec (keep the old term once, parenthesized, only if necessary).
 4. If the clarification invalidates an earlier ambiguous statement, replace it — don't leave contradictory text behind.
 5. Save the spec file after each integration. Preserve formatting and heading hierarchy; don't reorder unrelated sections.
 
@@ -65,7 +77,7 @@ After each accepted answer (don't batch — write after every single one):
 - Exactly one bullet per accepted answer, no duplicates; total asked ≤ 5.
 - No lingering vague placeholder the new answer was meant to resolve; no contradictory earlier statement remains.
 - Consistent terminology across all updated sections.
-- If `specs/NNN-feature/checklists/requirements.md` exists, re-check each checkbox item against the updated spec and toggle only the ones whose state actually changed (leave everything else untouched to avoid noisy diffs). Track newly-passing, regressions, and still-unchecked items.
+- If `.spec/[feature-dir]/checklists/requirements.md` exists, re-check each checkbox item against the updated spec and toggle only the ones whose state actually changed (leave everything else untouched to avoid noisy diffs). Track newly-passing, regressions, and still-unchecked items.
 
 ## Step 7: Closing
 

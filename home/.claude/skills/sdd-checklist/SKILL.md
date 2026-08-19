@@ -1,6 +1,6 @@
 ---
 name: sdd-checklist
-description: Generates a custom, domain-specific quality checklist for a feature — "unit tests for English" that validate the requirements' completeness, clarity, and consistency, not the implementation.
+description: Generates a custom, domain-specific quality checklist for a feature — "unit tests for English" that validate the requirements' completeness, clarity, and consistency, not the implementation. Domains can span classic areas (UX, API, security) or ML-specific ones (data quality, fairness, evaluation rigor).
 user_invocable: true
 ---
 
@@ -16,7 +16,7 @@ user_invocable: true
 
 If the spec is code written in English, the checklist is its unit test suite: it tests whether the requirements are well-written, complete, unambiguous, and ready for implementation — not whether the implementation works.
 
-**Position in the SDD pipeline**: optional, can run any time after `sdd-specify` (and typically also after `sdd-plan`/`sdd-tasks`, for domains like performance or security that only become concrete once the plan exists). Output: `specs/NNN-feature/checklists/[domain].md`.
+**Position in the SDD pipeline**: optional, can run any time after `sdd-specify` (and typically also after `sdd-plan`/`sdd-tasks`, for domains like performance or security that only become concrete once the plan exists). Output: `.spec/[feature-dir]/checklists/[domain].md`.
 
 **Ownership**: a checklist generated here is a reviewer-owned artifact. `[x]` means the reviewer judged the requirements-quality criterion satisfied — it does **not** mean implementation work is complete. This command only ever generates or appends items; it must never mark an item `[x]` itself. (Note: `checklists/requirements.md`, produced by `sdd-specify`/`sdd-clarify`, is a separate built-in spec-quality checklist — this exception doesn't apply to the custom checklists generated here.)
 
@@ -26,7 +26,7 @@ If the spec is code written in English, the checklist is its unit test suite: it
 
 Derive up to three contextual clarifying questions from the user's request plus signals already visible in spec/plan/tasks — no pre-baked catalog. Skip any question already unambiguous from what the user said.
 
-1. Extract signals: domain keywords (auth, latency, UX, API...), risk indicators ("critical", "must", "compliance"), stakeholder hints ("QA", "review", "security team"), explicit deliverables ("a11y", "rollback", "contracts").
+1. Extract signals: domain keywords (auth, latency, UX, API, data quality, fairness, drift...), risk indicators ("critical", "must", "compliance", "bias"), stakeholder hints ("QA", "review", "security team", "responsible AI team"), explicit deliverables ("a11y", "rollback", "contracts", "model card", "eval report").
 2. Cluster into up to 4 candidate focus areas, ranked by relevance.
 3. Identify probable audience & timing (author, reviewer, QA, release) if not explicit.
 4. Detect missing dimensions: scope breadth, depth/rigor, risk emphasis, exclusion boundaries, measurable acceptance criteria.
@@ -36,12 +36,12 @@ If presenting options, use a compact table (`Option | Candidate | Why It Matters
 
 ## Step 2: Load Feature Context
 
-Read from `specs/NNN-feature/`: `spec.md` (requirements and scope), `plan.md` if it exists (technical details, dependencies), `tasks.md` if it exists (implementation tasks). Load only what's relevant to the active focus areas — summarize rather than dumping full files.
+Read from `.spec/[feature-dir]/`: `spec.md` (requirements and scope), `plan.md` if it exists (technical details, dependencies), `tasks.md` if it exists (implementation tasks). Load only what's relevant to the active focus areas — summarize rather than dumping full files.
 
 ## Step 3: Generate the Checklist
 
-- Create `specs/NNN-feature/checklists/` if needed.
-- Filename: short and descriptive, `[domain].md` (e.g. `ux.md`, `api.md`, `security.md`).
+- Create `.spec/[feature-dir]/checklists/` if needed.
+- Filename: short and descriptive, `[domain].md` (e.g. `ux.md`, `api.md`, `security.md`, `data-quality.md`, `fairness.md`, `evaluation-rigor.md`).
 - If the file doesn't exist: create it, numbering items from `CHK001`. If it exists: **append**, continuing from the last ID used — never delete or replace existing content.
 - Leave every newly generated item unchecked (`[ ]`) — checkbox state belongs to the reviewer.
 
@@ -62,6 +62,10 @@ Examples:
 - "Do navigation requirements align across all pages? [Consistency, Spec §FR-10]"
 - "Are requirements defined for zero-state scenarios (no items)? [Coverage, Edge Case]"
 - "Can 'balanced visual weight' be objectively verified? [Measurability, Spec §FR-2]"
+- "Is the evaluation set's provenance (source, recency, label quality) specified? [Completeness, Spec §Business & Data Understanding]"
+- "Is 'high accuracy' quantified with a metric, threshold, and named eval set? [Clarity, Spec §SC-003]"
+- "Are fairness/protected-attribute requirements defined for every segment the model scores? [Gap, Risk Assessment]"
+- "Does the retraining trigger threshold match between the spec's Risk Assessment and the plan's Evaluation Gate? [Consistency]"
 
 **Absolutely prohibited** (these test implementation, not requirements): items starting with "Verify"/"Test"/"Confirm"/"Check" + a behavior; references to code execution, clicks, navigation, rendering; "displays correctly"/"works properly".
 

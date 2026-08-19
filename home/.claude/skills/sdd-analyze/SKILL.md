@@ -1,6 +1,6 @@
 ---
 name: sdd-analyze
-description: Runs a non-destructive, read-only cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation, before implementation.
+description: Runs a non-destructive, read-only cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation, before implementation. Includes ML-specific checks — Evaluation Gate consistency, Risk Assessment coverage, experiment-tracking compliance.
 user_invocable: true
 ---
 
@@ -12,7 +12,7 @@ user_invocable: true
 
 **Operating constraint — strictly read-only**: do not modify any files. Produce a structured report and, at the end, offer to suggest concrete remediation edits — but never apply them automatically without explicit approval.
 
-**Constitution authority**: `docs/constitution.md`, if it exists, is non-negotiable within this analysis. A conflict with it is automatically CRITICAL and requires adjusting the spec, plan, or tasks — not diluting or reinterpreting the principle. If a principle itself needs to change, that happens through a separate, explicit `sdd-constitution` run, outside this analysis.
+**Constitution authority**: `.spec/constitution.md`, if it exists, is non-negotiable within this analysis. A conflict with it is automatically CRITICAL and requires adjusting the spec, plan, or tasks — not diluting or reinterpreting the principle. If a principle itself needs to change, that happens through a separate, explicit `sdd-constitution` run, outside this analysis.
 
 ---
 
@@ -23,13 +23,15 @@ Abort with a clear message if any required file is missing (name the missing pre
 - **spec.md**: overview/context, functional requirements, success criteria, user stories, edge cases.
 - **plan.md**: architecture/stack choices, data-model references, phases, technical constraints.
 - **tasks.md**: task IDs, descriptions, phase grouping, `[P]` markers, referenced file paths.
-- **docs/constitution.md** (if it exists): principles for validation.
+- **.spec/constitution.md** (if it exists): principles for validation.
 
 ## Step 2: Build Semantic Models (internal — don't dump raw artifacts into the output)
 
-- **Requirements inventory**: one stable key per Functional Requirement (FR-###) and Success Criterion (SC-###); use the explicit ID as the primary key. Include only Success Criteria that require buildable work (e.g. load-testing infrastructure, security-audit tooling); exclude post-launch outcome metrics and business KPIs (e.g. "Reduce support tickets by 50%").
+- **Requirements inventory**: one stable key per Functional Requirement (FR-###) and Success Criterion (SC-###); use the explicit ID as the primary key. Include Model/ML Metrics (they require buildable evaluation work) and any Business KPI that requires buildable infrastructure (e.g. load-testing, audit tooling); exclude pure post-launch outcome metrics (e.g. "Reduce support tickets by 50%").
+- **Risk inventory**: one entry per Risk Assessment row (failure mode + mitigation), if the spec has one.
 - **User story/action inventory**: discrete user actions with their acceptance criteria.
-- **Task coverage mapping**: each task mapped to one or more requirements/stories (by explicit ID reference or keyword inference).
+- **Task coverage mapping**: each task mapped to one or more requirements/stories/risks (by explicit ID reference or keyword inference).
+- **Evaluation Gate model**: metric/threshold/eval-set rows from `plan.md`, to be diffed against `spec.md`'s Model/ML Metrics and `tasks.md`'s Evaluation phase.
 - **Constitution rule set**: principle names and their MUST/SHOULD statements.
 
 ## Step 3: Detection Passes
@@ -40,13 +42,15 @@ Focus on high-signal findings; cap at 50 total, summarizing any overflow.
 - **B. Ambiguity**: vague, unquantified adjectives ("fast", "scalable", "secure", "intuitive", "robust"); unresolved placeholders (`TODO`, `TKTK`, `???`, `<placeholder>`).
 - **C. Underspecification**: requirements with a verb but no object/measurable outcome; user stories missing acceptance-criteria alignment; tasks referencing files/components not defined in spec/plan.
 - **D. Constitution alignment**: any requirement or plan element conflicting with a MUST principle; mandated sections or quality gates missing.
-- **E. Coverage gaps**: requirements with zero associated tasks; tasks with no mapped requirement/story; buildable Success Criteria (performance, security, availability) absent from tasks.
+- **E. Coverage gaps**: requirements with zero associated tasks; tasks with no mapped requirement/story; buildable Success Criteria (performance, security, availability) absent from tasks; Risk Assessment mitigations in `spec.md` with no corresponding task in `tasks.md`.
 - **F. Inconsistency**: terminology drift (same concept named differently across files); data entities in the plan but absent from the spec (or vice versa); task-ordering contradictions (e.g. integration before foundational setup, with no dependency note); conflicting requirements (e.g. one requires Next.js while another specifies Vue).
+- **G. Evaluation Gate mismatch**: a Model/ML Metric in `spec.md` with no matching row in `plan.md`'s Evaluation Gate (or vice versa); a metric/threshold that differs between `plan.md` and the Evaluation phase in `tasks.md`; a Modeling/Experimentation task with no Accept/Reject clause or no named fallback task.
+- **H. Constitution/ML compliance**: `.spec/constitution.md` mandates an experiment-tracking tool, data-versioning tool, or minimum eval protocol that doesn't appear in `plan.md`'s Technical Context.
 
 ## Step 4: Assign Severity
 
-- **CRITICAL**: violates a constitution MUST, a core artifact is missing, or a requirement has zero coverage and blocks baseline functionality.
-- **HIGH**: duplicate/conflicting requirement, ambiguous security/performance attribute, untestable acceptance criterion.
+- **CRITICAL**: violates a constitution MUST, a core artifact is missing, a requirement has zero coverage and blocks baseline functionality, the spec's Risk Assessment section is missing for a feature that isn't confirmed non-ML, or an Evaluation Gate mismatch exists between `plan.md` and `tasks.md`.
+- **HIGH**: duplicate/conflicting requirement, ambiguous security/performance attribute, untestable acceptance criterion, a Risk Assessment mitigation with no corresponding task, a Modeling task missing its Accept/Reject clause.
 - **MEDIUM**: terminology drift, missing non-functional task coverage, underspecified edge case.
 - **LOW**: style/wording improvement, minor redundancy not affecting execution order.
 
@@ -75,7 +79,7 @@ Output a Markdown report (no file writes):
 - Ambiguity Count / Duplication Count / Critical Issues Count
 ```
 
-Generate stable finding IDs prefixed by category initial (A, B, C, D, E, F). Re-running on unchanged artifacts should produce consistent IDs and counts.
+Generate stable finding IDs prefixed by category initial (A through H). Re-running on unchanged artifacts should produce consistent IDs and counts.
 
 ## Step 6: Next Actions
 
