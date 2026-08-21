@@ -19,6 +19,7 @@ brew "lazydocker"
 brew "eza"
 brew "zsh"
 brew "gh"
+brew "pass"
 
 # Homebrew on Linux does not provide macOS's built-in pbcopy/pbpaste.
 brew "xclip" if OS.linux?

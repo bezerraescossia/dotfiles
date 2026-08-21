@@ -26,6 +26,9 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
+export EDITOR="nvim"
+export VISUAL="nvim"
+
 alias ll='eza --icons -l'
 alias la='eza --icons -la'
 alias lt='eza --icons -T -L'
