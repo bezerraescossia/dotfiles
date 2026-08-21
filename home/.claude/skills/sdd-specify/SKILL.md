@@ -18,7 +18,8 @@ This skill guides Claude to act as a senior ML Product Manager and ML Engineer. 
 
 Don't block execution if something is missing — a brand-new project may not have any of this yet:
 - `.spec/constitution.md`: if it exists, check whether anything in the user's request conflicts with a non-negotiable principle. Flag any conflict explicitly before generating the spec — never silently generate a spec that violates the constitution.
-- `.spec/`: if it exists, scan its `E<N>-*` directories (epic directories, each containing an `epic.md`) and check whether the user's description names one of them or one of its Feature Backlog entries. If exactly one epic matches, load its `epic.md` (Objective & Business Context, Non-Goals, Constitution Check) and, if present, `shared-data-model.md` — both become binding context for this spec. If more than one epic could plausibly match, ask the user which one (or "standalone, no epic"). If none match, proceed as a standalone feature — this skill works perfectly well without an epic.
+- `.spec/`: if it exists, scan its `NN-*` directories (epic directories, each containing an `epic.md`) and check whether the user's description names one of them or one of its Feature Backlog entries. If exactly one epic matches, load its `epic.md` (Objective & Business Context, Non-Goals, Constitution Check) and, if present, `shared-data-model.md` — both become binding context for this spec. If more than one epic could plausibly match, ask the user which one (or "standalone, no epic"). If none match, proceed as a standalone feature — this skill works perfectly well without an epic.
+  - When an epic matches, also identify the specific Feature Backlog row (its `[PHASE][N]` ID, e.g. `BDU1`) the description corresponds to — Step 4 uses this ID to name the feature directory and Step 7 uses it to update the row. If exactly one row is a clear match, use it. If the description doesn't match any existing row (a feature not originally in the backlog), ask the user which CRISP-ML(Q) phase it belongs to and assign it the next local counter for that phase code, noting in the spec that it wasn't in the original backlog. If more than one row could plausibly match, ask.
 
 ## Step 2: Analyze Scope and Feasibility
 
@@ -32,8 +33,8 @@ Before drafting, do an explicit feasibility pass: is this solvable at all with a
 
 ## Step 4: Determine the Feature Directory
 
-1. List all existing feature directories under `.spec/` — any directory containing a `spec.md` (an epic directory contains `epic.md` instead and doesn't count). Find the highest `NNN` used across `F<NNN>-*` and `E<N>F<NNN>-*` names — features share **one global counter** regardless of which epic (if any) they belong to — and use `NNN+1` zero-padded to 3 digits (`001`, `002`, ...).
-2. If this feature belongs to an epic `E<K>` (per Step 1), name the directory `.spec/E<K>F<NNN>-short-name/`. Otherwise (standalone feature), name it `.spec/F<NNN>-short-name/`.
+1. If this feature belongs to an epic (per Step 1), nest it directly under that epic's directory: `.spec/NN-epic-name/[phase][nn]-short-name/`, where `[phase][nn]` is the lowercased, 2-digit-zero-padded Feature Backlog ID identified in Step 1 (e.g. backlog ID `BDU1` → `bdu01`, `DP12` → `dp12`) — this must match `epic.md`'s ID for this row exactly, just re-cased and padded.
+2. Otherwise (standalone feature, no epic), list existing standalone feature directories flat under `.spec/` (`00NNN-*`). Find the highest 3-digit suffix in use and use that value `+1`, zero-padded to 3 digits (`001`, `002`, ...): `.spec/00<NNN>-short-name/`.
 
 You must only create **one** feature per invocation of this skill.
 
@@ -59,7 +60,7 @@ Model/ML success metrics must be measurable, tied to a named evaluation set, and
 **Feature Branch**: `[feature-dir]`
 **Created**: [TODAY'S DATE]
 **Status**: Draft
-**Epic**: [.spec/E<N>-epic-name/epic.md — Feature FN, or "None — standalone feature"]
+**Epic**: [.spec/NN-epic-name/epic.md — Feature [backlog ID], or "None — standalone feature"]
 **Input**: User description: "$ARGUMENTS"
 
 ## Business & Data Understanding *(mandatory unless explicitly non-ML — see Assumptions)*
@@ -127,7 +128,7 @@ Model/ML success metrics must be measurable, tied to a named evaluation set, and
 
 - **[Entity 1]**: [What it represents, key attributes at a conceptual/business level]
 - **[Entity 2]**: [What it represents, relationships to other entities]
-- If this feature belongs to an epic and an entity already exists in its `shared-data-model.md`, reference it instead of redefining it: "**[Entity]**: see .spec/E<N>-epic-name/shared-data-model.md" — only define entities here that are genuinely local to this feature.
+- If this feature belongs to an epic and an entity already exists in its `shared-data-model.md`, reference it instead of redefining it: "**[Entity]**: see .spec/NN-epic-name/shared-data-model.md" — only define entities here that are genuinely local to this feature.
 
 ## Risk Assessment *(mandatory unless explicitly non-ML — see Assumptions)*
 
@@ -159,7 +160,7 @@ Model/ML success metrics must be measurable, tied to a named evaluation set, and
 
 After writing the spec, validate it against a quality checklist:
 
-1. Write `.spec/[feature-dir]/checklists/requirements.md`:
+1. Write `.spec/[feature-dir]/requirements.md` (flat in the feature directory, no `checklists/` subfolder):
    ```markdown
    # Specification Quality Checklist: [FEATURE NAME]
 

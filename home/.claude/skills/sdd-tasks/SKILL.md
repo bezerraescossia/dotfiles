@@ -8,7 +8,7 @@ user_invocable: true
 
 This skill guides Claude to act as a Tech Lead planning a feature's execution. The goal is to break `plan.md` + `spec.md` into concrete tasks, specific enough to be executed without additional context, organized by CRISP-ML(Q) phase so an ML feature's inherent iterate-and-backtrack cycle is represented, not hidden.
 
-**Position in the SDD pipeline**: Plan → Checklist (optional) → **Tasks** → Analyze (optional) → Implement → Monitor (optional). Required input: `.spec/[feature-dir]/plan.md` and `.spec/[feature-dir]/spec.md`. Optional context: `.spec/constitution.md`, `research.md`, `data-preparation.md`, `data-model.md`, `contracts/` in the same directory. Output: `.spec/[feature-dir]/tasks.md`.
+**Position in the SDD pipeline**: Plan → Checklist (optional) → **Tasks** → Analyze (optional) → Implement → Monitor (optional). Required input: `.spec/[feature-dir]/plan.md` and `.spec/[feature-dir]/spec.md`. Optional context: `.spec/constitution.md`, `research.md`, `data-preparation.md`, `data-model.md`, any contract file, in the same directory. Output: `.spec/[feature-dir]/tasks.md`.
 
 ---
 
@@ -17,7 +17,7 @@ This skill guides Claude to act as a Tech Lead planning a feature's execution. T
 1. Identify the feature (same logic as `sdd-plan`: if ambiguous, ask, or use the most recent `.spec/` directory with a `plan.md` but no `tasks.md`).
 2. Read `.spec/[feature-dir]/plan.md` (required — without it, stop and ask the user to run `sdd-plan` first): extract stack, dependencies, Evaluation Gate thresholds, and the defined project structure.
 3. Read `.spec/[feature-dir]/spec.md` (required): extract user stories with their priorities (P1, P2, P3...), the Risk Assessment table, and Success Criteria (Business KPIs and Model/ML Metrics).
-4. If present, read `research.md` (decisions → become setup tasks), `data-preparation.md` (data pipeline steps → Data Preparation phase tasks), `data-model.md` (entities → mapped to the phase that first uses them), and `contracts/` (each interface contract → mapped to Deployment).
+4. If present, read `research.md` (decisions → become setup tasks), `data-preparation.md` (data pipeline steps → Data Preparation phase tasks), `data-model.md` (entities → mapped to the phase that first uses them), and any contract file, flat in the feature directory (each interface contract → mapped to Deployment).
 5. If it exists, read `.spec/constitution.md`: check for a non-negotiable Test-First/TDD principle and for a mandated experiment-tracking tool.
 6. If `plan.md` has no Evaluation Gate section (confirmed non-ML feature), skip straight to the non-ML phase structure in Step 4B.
 

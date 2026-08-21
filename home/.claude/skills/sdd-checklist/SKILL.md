@@ -16,9 +16,9 @@ user_invocable: true
 
 If the spec is code written in English, the checklist is its unit test suite: it tests whether the requirements are well-written, complete, unambiguous, and ready for implementation — not whether the implementation works.
 
-**Position in the SDD pipeline**: optional, can run any time after `sdd-specify` (and typically also after `sdd-plan`/`sdd-tasks`, for domains like performance or security that only become concrete once the plan exists). Output: `.spec/[feature-dir]/checklists/[domain].md`.
+**Position in the SDD pipeline**: optional, can run any time after `sdd-specify` (and typically also after `sdd-plan`/`sdd-tasks`, for domains like performance or security that only become concrete once the plan exists). Output: `.spec/[feature-dir]/[domain].md` — a flat file directly in the feature directory, no `checklists/` subfolder.
 
-**Ownership**: a checklist generated here is a reviewer-owned artifact. `[x]` means the reviewer judged the requirements-quality criterion satisfied — it does **not** mean implementation work is complete. This command only ever generates or appends items; it must never mark an item `[x]` itself. (Note: `checklists/requirements.md`, produced by `sdd-specify`/`sdd-clarify`, is a separate built-in spec-quality checklist — this exception doesn't apply to the custom checklists generated here.)
+**Ownership**: a checklist generated here is a reviewer-owned artifact. `[x]` means the reviewer judged the requirements-quality criterion satisfied — it does **not** mean implementation work is complete. This command only ever generates or appends items; it must never mark an item `[x]` itself. (Note: `requirements.md`, produced by `sdd-specify`/`sdd-clarify`, is a separate built-in spec-quality checklist — this exception doesn't apply to the custom checklists generated here.)
 
 ---
 
@@ -40,8 +40,8 @@ Read from `.spec/[feature-dir]/`: `spec.md` (requirements and scope), `plan.md` 
 
 ## Step 3: Generate the Checklist
 
-- Create `.spec/[feature-dir]/checklists/` if needed.
-- Filename: short and descriptive, `[domain].md` (e.g. `ux.md`, `api.md`, `security.md`, `data-quality.md`, `fairness.md`, `evaluation-rigor.md`).
+- Write directly to `.spec/[feature-dir]/[domain].md` — flat in the feature directory, no `checklists/` subfolder.
+- Filename: short and descriptive, `[domain].md` (e.g. `ux.md`, `api.md`, `security.md`, `data-quality.md`, `fairness.md`, `evaluation-rigor.md`). Before naming a new one, check it doesn't collide with another artifact already in the feature directory (`spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-preparation.md`, `data-model.md`, `quickstart.md`, `monitoring.md`, `requirements.md`, or an existing contract file) — pick a more specific domain name if it would.
 - If the file doesn't exist: create it, numbering items from `CHK001`. If it exists: **append**, continuing from the last ID used — never delete or replace existing content.
 - Leave every newly generated item unchecked (`[ ]`) — checkbox state belongs to the reviewer.
 

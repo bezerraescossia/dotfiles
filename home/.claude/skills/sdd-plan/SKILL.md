@@ -8,7 +8,7 @@ user_invocable: true
 
 This skill guides Claude to act as a Senior ML/Software Architect. The goal is to turn a feature specification (what/why) into a concrete technical plan — data pipeline, modeling approach, evaluation gate, deployment target — validated against the project's non-negotiable constitution.
 
-**Position in the SDD pipeline**: Specify → Clarify (optional) → **Plan** → Checklist (optional) → Tasks. Required input: `.spec/[feature-dir]/spec.md` and `.spec/constitution.md`. Output: `.spec/[feature-dir]/plan.md` plus, when relevant, `research.md`, `data-preparation.md`, `data-model.md`, `contracts/`, and `quickstart.md` in the same directory — consumed next by `sdd-tasks`.
+**Position in the SDD pipeline**: Specify → Clarify (optional) → **Plan** → Checklist (optional) → Tasks. Required input: `.spec/[feature-dir]/spec.md` and `.spec/constitution.md`. Output: `.spec/[feature-dir]/plan.md` plus, when relevant, `research.md`, `data-preparation.md`, `data-model.md`, one or more contract files, and `quickstart.md` in the same directory — consumed next by `sdd-tasks`.
 
 **Default assumption**: the feature trains, fine-tunes, or prompts a model. If the spec explicitly scoped itself as non-ML (see `sdd-specify`), skip the ML-specific Technical Context fields and the Evaluation Gate, and plan as a traditional software feature instead.
 
@@ -90,10 +90,10 @@ These thresholds must match the Model/ML Metrics in `spec.md`'s Success Criteria
 .spec/[feature-dir]/
 ├── plan.md
 ├── spec.md
-├── research.md          # if any NEEDS CLARIFICATION item needs resolving
-├── data-preparation.md  # if the feature involves a non-trivial data pipeline
-├── data-model.md         # if the feature involves meaningful data entities
-├── contracts/             # if the feature exposes an interface to users or other systems
+├── research.md            # if any NEEDS CLARIFICATION item needs resolving
+├── data-preparation.md    # if the feature involves a non-trivial data pipeline
+├── data-model.md          # if the feature involves meaningful data entities
+├── <contract-name>.md     # one flat file per interface contract, if the feature exposes one — no contracts/ subfolder
 ├── quickstart.md          # runnable validation scenarios proving the feature works end-to-end
 ├── tasks.md               # generated later by sdd-tasks
 └── monitoring.md          # generated later by sdd-monitor
@@ -129,8 +129,8 @@ Prerequisite: `research.md` complete (if it was needed).
 
 1. **`data-preparation.md`**: if the spec's Business & Data Understanding section is non-trivial, document data sourcing, the versioning scheme (e.g. DVC/lakeFS revision or snapshot policy), the train/validation/test split strategy (and why — random vs. temporal vs. grouped), and leakage checks (e.g. no future information, no duplicate entities across splits).
 2. **`data-model.md`**: if the spec has a non-trivial "Key Entities" section, extract entity names, fields, relationships, and validation/state-transition rules derived from the functional requirements. If the feature belongs to an epic with a `shared-data-model.md`, do not redefine entities already documented there — reference them by name and only document feature-local entities here.
-3. **`contracts/`**: if the project exposes an interface to users or other systems (prediction API, batch-scoring contract, prompt/response schema, CLI), document it in the format appropriate to the project type. Skip for purely internal/offline projects.
-4. **`quickstart.md`**: a runnable validation guide proving the feature works end-to-end — prerequisites, setup commands, run/train/eval commands, expected outcomes. Reference `contracts/`, `data-model.md`, and `data-preparation.md` instead of duplicating them. Do not include full implementation code or complete test suites — that belongs in `tasks.md` and the implementation phase itself.
+3. **Contract file(s)**: if the project exposes an interface to users or other systems (prediction API, batch-scoring contract, prompt/response schema, CLI), document it as a flat file directly in the feature directory (e.g. `artifact-schemas.md`, `openapi.yaml`) — no `contracts/` subfolder. One file per contract; pick a name that doesn't collide with another artifact already in the directory. Skip for purely internal/offline projects.
+4. **`quickstart.md`**: a runnable validation guide proving the feature works end-to-end — prerequisites, setup commands, run/train/eval commands, expected outcomes. Reference the contract file(s), `data-model.md`, and `data-preparation.md` instead of duplicating them. Do not include full implementation code or complete test suites — that belongs in `tasks.md` and the implementation phase itself.
 
 ## Step 6: Closing
 

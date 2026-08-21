@@ -77,7 +77,7 @@ After each accepted answer (don't batch — write after every single one):
 - Exactly one bullet per accepted answer, no duplicates; total asked ≤ 5.
 - No lingering vague placeholder the new answer was meant to resolve; no contradictory earlier statement remains.
 - Consistent terminology across all updated sections.
-- If `.spec/[feature-dir]/checklists/requirements.md` exists, re-check each checkbox item against the updated spec and toggle only the ones whose state actually changed (leave everything else untouched to avoid noisy diffs). Track newly-passing, regressions, and still-unchecked items.
+- If `.spec/[feature-dir]/requirements.md` exists, re-check each checkbox item against the updated spec and toggle only the ones whose state actually changed (leave everything else untouched to avoid noisy diffs). Track newly-passing, regressions, and still-unchecked items.
 
 ## Step 7: Closing
 

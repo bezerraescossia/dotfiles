@@ -8,7 +8,7 @@ user_invocable: true
 
 This skill guides Claude to execute a feature end-to-end from its generated artifacts, rather than planning it. It's where code, data pipelines, and models actually get built — the second-to-last step of the pipeline, followed by `sdd-monitor`.
 
-**Position in the SDD pipeline**: Tasks → Analyze (optional) → **Implement** → Monitor (optional). Required input: `.spec/[feature-dir]/tasks.md` and `.spec/[feature-dir]/plan.md`. Optional context: `data-preparation.md`, `data-model.md`, `contracts/`, `research.md`, `quickstart.md`, `.spec/constitution.md`, and any checklists under `.spec/[feature-dir]/checklists/`.
+**Position in the SDD pipeline**: Tasks → Analyze (optional) → **Implement** → Monitor (optional). Required input: `.spec/[feature-dir]/tasks.md` and `.spec/[feature-dir]/plan.md`. Optional context: `data-preparation.md`, `data-model.md`, any contract file, `research.md`, `quickstart.md`, `.spec/constitution.md`, and any checklist file flat in `.spec/[feature-dir]/`.
 
 If `tasks.md` is missing or incomplete, tell the user to run `sdd-tasks` first — don't improvise a task breakdown here.
 
@@ -16,7 +16,7 @@ If `tasks.md` is missing or incomplete, tell the user to run `sdd-tasks` first �
 
 ## Step 1: Check Checklist Status (gate)
 
-If `.spec/[feature-dir]/checklists/` exists, scan every checklist file:
+Checklists are flat files directly in `.spec/[feature-dir]/`, not under a `checklists/` subfolder. Identify them by content, not name: among the `.md` files in that directory other than the core pipeline artifacts (`spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-preparation.md`, `data-model.md`, `quickstart.md`, `monitoring.md`) and any contract file, treat any file containing `- [ ]`/`- [x]`/`- [X]` checkbox items (numbered `CHK###`, e.g. the built-in `requirements.md` or a custom domain checklist like `ux.md`) as a checklist to gate on. Then, for each:
 
 - Count total items (`- [ ]`/`- [x]`/`- [X]`), checked, and unchecked, per file.
 - Show a status table:
@@ -41,8 +41,8 @@ If `plan.md` has an Evaluation Gate section, this is a second **read-only gate**
 
 ## Step 3: Load Implementation Context
 
-- **Required**: `tasks.md` (full task list and execution plan), `plan.md` (tech stack, architecture, file structure, Evaluation Gate).
-- **If present**: `data-preparation.md`, `data-model.md`, `contracts/`, `research.md`, `.spec/constitution.md`, `quickstart.md`.
+- **Required**: `tasks.md` (full task list and execution plan), `plan.md` (tech stack, architecture, file structure, Evaluation Gate), `spec.md` (original requirements, and the `Epic` back-reference if this feature belongs to one).
+- **If present**: `data-preparation.md`, `data-model.md`, any contract file, `research.md`, `.spec/constitution.md`, `quickstart.md`.
 
 ## Step 4: Verify Project Setup
 
@@ -74,7 +74,7 @@ Extract from `tasks.md`: phases (Setup, Foundational, Data Preparation, Modeling
 ## Step 7: Track Progress
 
 - Report progress after each completed task.
-- Mark each completed task `[X]` in `tasks.md` as you finish it — this is the one file this skill is expected to keep editing throughout the run.
+- Mark each completed task `[X]` in `tasks.md` as you finish it — this is the primary file this skill edits throughout the run; see Step 9 for the one other, conditional write.
 - On a failure in a non-parallel task, halt and report it clearly with enough context to debug, and suggest next steps.
 - On a failure in a `[P]` task, continue with the other parallel tasks and report the failed one at the end of that batch.
 
@@ -85,10 +85,22 @@ Extract from `tasks.md`: phases (Setup, Foundational, Data Preparation, Modeling
 - Confirm the Evaluation Gate passed (or that the user explicitly approved proceeding without it, per Step 2).
 - Confirm tests pass (where applicable) and the implementation follows the technical plan.
 
-## Step 9: Closing
+## Step 9: Update the Epic (conditional)
+
+If `spec.md`'s `Epic` field names an epic, and Step 8 confirmed full completion (every task `[X]`, and the Evaluation Gate passed or explicitly overridden by the user):
+
+- Open that epic's `.spec/NN-epic-name/epic.md` and find the Feature Backlog row whose Status cell links to this feature's `spec.md` — match by that link, not by feature name, since names can drift. Flip its Status from `Specified` to `Implemented`.
+- Don't touch any other row, table, or section in `epic.md` — phase reports are `sdd-epic`'s job (its Phase Report flow), not this skill's.
+- If this was the last row in its CRISP-ML(Q) phase to reach `Implemented`, note that in Step 10's closing report.
+
+Skip this step entirely for a standalone feature (no `Epic` field) or if completion wasn't full.
+
+## Step 10: Closing
 
 Report final status: summary of completed work, any tasks left incomplete and why, test results, and anything that still needs manual follow-up.
 
 Generate a short **model/experiment summary** (skip for a confirmed non-ML feature): what approaches were tried in Modeling/Experimentation, the final metrics vs. the Evaluation Gate thresholds, and where artifacts were logged in the experiment-tracking tool.
+
+If Step 9 flipped this feature's epic backlog row to `Implemented`, say so, and if it was the last row in its phase, recommend re-running `sdd-epic` against that epic to generate the phase's completion report.
 
 Suggest `sdd-monitor` as the next step to set up drift detection, retraining triggers, and a rollback runbook before or shortly after this feature ships.
