@@ -4,7 +4,7 @@ return {
   opts = {
     filesystem = {
       window = {
-        position = "float",
+        position = "left",
       },
       filtered_items = {
         visible = true, -- mostra os itens filtrados (ocultos) por padrão
