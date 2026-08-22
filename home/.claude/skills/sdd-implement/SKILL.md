@@ -1,106 +1,108 @@
 ---
 name: sdd-implement
-description: Executes a feature's implementation plan by working through every task in tasks.md, phase by phase, respecting dependencies, parallel markers, and the Evaluation Gate, and checking off completed work.
+description: Takes one feature already specified by sdd-backlog (user-declared) from technical plan through working code — Plan, an optional on-demand requirements-quality Checklist, Tasks, a read-only Analyze consistency pass, and Implement — resuming from whatever's already on disk so re-running it only does what's left. Pauses once, after Plan, to show the Constitution Check and Evaluation Gate before generating tasks, and gates Implement on any checklist file's unchecked items and on the Evaluation Gate passing.
 user_invocable: true
+argument-hint: "<feature name or directory>"
 ---
 
-# Implementation Executor
+# Feature Implementer (Plan → Checklist → Tasks → Analyze → Implement)
 
-This skill guides Claude to execute a feature end-to-end from its generated artifacts, rather than planning it. It's where code, data pipelines, and models actually get built — the second-to-last step of the pipeline, followed by `sdd-monitor`.
+This skill guides Claude from a feature's specification to its working implementation, for **exactly one feature per invocation**, declared by the user. It acts as a Senior ML/Software Architect for planning, a Tech Lead for task breakdown, and an implementation engineer for execution — the same person walking the whole way, not four separate handoffs.
 
-**Position in the SDD pipeline**: Tasks → Analyze (optional) → **Implement** → Monitor (optional). Required input: `.spec/[feature-dir]/tasks.md` and `.spec/[feature-dir]/plan.md`. Optional context: `data-preparation.md`, `data-model.md`, any contract file, `research.md`, `quickstart.md`, `.spec/constitution.md`, and any checklist file flat in `.spec/[feature-dir]/`.
+**Position in the SDD pipeline**: after `sdd-backlog` has produced `.spec/[feature-dir]/spec.md`. Required input: that `spec.md`, and `.spec/constitution.md` if it exists (proceed with a warning if missing). Output: `plan.md` (+ `research.md`/`data-preparation.md`/`data-model.md`/contract files/`quickstart.md` as needed), an optional domain checklist, `tasks.md`, an Analyze report (not persisted), and the actual code/pipeline/model — plus `tasks.md` checkbox state and, if this feature belongs to an epic, that epic's `epic.md` row.
 
-If `tasks.md` is missing or incomplete, tell the user to run `sdd-tasks` first — don't improvise a task breakdown here.
+**Default assumption**: the feature trains, fine-tunes, or prompts a model. If `spec.md` scoped itself as non-ML, skip the ML-specific Technical Context fields and the Evaluation Gate throughout, and treat this as a traditional software feature.
+
+## Directory conventions
+
+- `.spec/constitution.md` — global governance principles, written by `sdd-constitution`.
+- `.spec/NN-epic-name/[phase][nn]-feature-name/` or `.spec/00NNN-feature-name/` — the feature directory, created by `sdd-backlog`. Contains `spec.md` already; this skill adds `plan.md`, `tasks.md`, and everything else flat alongside it — no `checklists/` or `contracts/` subfolder, ever. If this feature belongs to an epic, its `epic.md` lives at `.spec/NN-epic-name/epic.md`.
 
 ---
 
-## Step 1: Check Checklist Status (gate)
+## Step 1: Identify the Feature and Resume State
 
-Checklists are flat files directly in `.spec/[feature-dir]/`, not under a `checklists/` subfolder. Identify them by content, not name: among the `.md` files in that directory other than the core pipeline artifacts (`spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-preparation.md`, `data-model.md`, `quickstart.md`, `monitoring.md`) and any contract file, treat any file containing `- [ ]`/`- [x]`/`- [X]` checkbox items (numbered `CHK###`, e.g. the built-in `requirements.md` or a custom domain checklist like `ux.md`) as a checklist to gate on. Then, for each:
+1. Identify the feature: if the user names one, use it (matching by directory name or short name). If ambiguous, list `.spec/` feature directories that have a `spec.md` and ask.
+2. Read `.spec/[feature-dir]/spec.md` (required — without it, stop and tell the user to run `sdd-backlog` first).
+3. Read `.spec/constitution.md` if it exists (warn once if missing, then proceed).
+4. **Build a resume checklist from disk** — this run only does what's not already done:
+   - `plan.md` present → Plan already done, skip to Step 3's pause-point summary instead of regenerating (unless the user asks to redo it).
+   - Any non-core `.md` file in the feature directory containing `- [ ]`/`- [x]` items → a checklist already exists; Step 4 is on-demand regardless, but note its current pass/fail state.
+   - `tasks.md` present → Tasks already done (report `[X]` count / total); skip Step 5 unless the user asks to regenerate it.
+   - `tasks.md` fully `[X]` → Implement already complete; Step 7 has nothing to do besides re-confirming gates if re-entered.
+5. Report this resume state to the user before doing anything else.
 
-- Count total items (`- [ ]`/`- [x]`/`- [X]`), checked, and unchecked, per file.
-- Show a status table:
-  ```text
-  | Checklist    | Total | Checked | Unchecked | Status |
-  |--------------|-------|---------|-----------|--------|
-  | ux.md        | 12    | 12      | 0         | ✓ PASS |
-  | security.md  | 6     | 4       | 2         | ✗ FAIL |
-  ```
-- This is a **read-only gate** — never modify checklist files or their markers here.
-- If any checklist has unchecked items: show the table, then **stop** and ask "Some checklists have unchecked items. Proceed with implementation anyway?" Wait for the answer; only continue on an explicit yes.
-- If all checklists pass: show the table and continue automatically.
+## Step 2: Plan Sub-Stage (skip if `plan.md` already exists and the user isn't asking to redo it)
 
-## Step 2: Check Evaluation Gate Status (gate)
+1. If `spec.md` has an `Epic` back-reference, read that epic's `shared-data-model.md` if it exists — its entities are binding for `data-model.md` below.
+2. Fill every Technical Context field with real evidence, never assumption: where a stack/pipeline/model already exists (dependency manifests, notebooks, training scripts, an existing directory tree), inspect it and treat it as binding. Where nothing is decided, whatever the constitution fixes is binding; for the rest, ask the user directly (`AskUserQuestion` or short question blocks) — never choose the data source, model approach, or stack unilaterally. Anything still open becomes an explicit `NEEDS CLARIFICATION` — never a silent assumption.
+3. Write `.spec/[feature-dir]/plan.md` following `PLAN-TEMPLATE.md` exactly, including the Constitution Check and, unless confirmed non-ML, the Evaluation Gate (its thresholds must match `spec.md`'s Model/ML Metrics verbatim).
+4. If the Constitution Check recorded a `Violation` with no acceptable justification, **do not proceed** — resolve it (back to the spec/design, or record it in Complexity Tracking with explicit rationale) before continuing.
+5. Phase 0 (Research) and Phase 1 (Design & Contracts) sub-steps in `PLAN-TEMPLATE.md` run as described there, conditionally.
 
-If `plan.md` has an Evaluation Gate section, this is a second **read-only gate**, independent of Step 1:
+## Step 3: Pause for Review
 
-- Locate the Evaluation phase in `tasks.md`. Its task(s) must be marked `[X]` and their recorded result (in the task's own notes, or in `tasks.md`'s Checkpoint line) must meet every metric/threshold row in `plan.md`'s Evaluation Gate table — not merely be checked off.
-- Show a status table mirroring the Evaluation Gate: Metric | Threshold | Recorded Result | Status (✓ PASS / ✗ FAIL / — Not yet run).
-- If the Evaluation phase hasn't run yet, or any metric fails: show the table, then **stop before executing any Deployment-phase task** and ask "The Evaluation Gate hasn't passed. Proceed to deployment anyway?" Wait for the answer; only continue on an explicit yes. Non-deployment phases (Setup through Modeling/Experimentation) may still proceed normally regardless of this gate.
-- If `plan.md` has no Evaluation Gate section (confirmed non-ML feature), skip this step entirely.
+Show the user the Constitution Check table and the Evaluation Gate table (or note why it was omitted) from the just-written `plan.md`. Ask them to confirm before generating tasks — this is the one built-in pause point in this skill. Only proceed to Step 5 on an explicit go-ahead; if they want changes, revise `plan.md` and re-show the tables.
 
-## Step 3: Load Implementation Context
+## Step 4: Checklist Sub-Stage (on-demand only — do not run unless asked)
 
-- **Required**: `tasks.md` (full task list and execution plan), `plan.md` (tech stack, architecture, file structure, Evaluation Gate), `spec.md` (original requirements, and the `Epic` back-reference if this feature belongs to one).
-- **If present**: `data-preparation.md`, `data-model.md`, any contract file, `research.md`, `.spec/constitution.md`, `quickstart.md`.
+Only run this if the user explicitly asks for a domain checklist this session (e.g. "generate a security checklist for this feature"). Otherwise skip straight to Step 5.
 
-## Step 4: Verify Project Setup
+**Core concept**: a checklist here is a **unit test suite for requirements writing**, not a test plan for the implementation — "Is 'fast loading' quantified with specific timing thresholds? [Clarity]", never "Verify the button clicks correctly."
 
-Check for the ignore files the detected stack actually needs, and create or top up whichever are missing essential patterns (never blindly overwrite an existing one — only append missing critical patterns):
+1. Derive up to 3 contextual clarifying questions about scope/depth/audience from the user's request plus signals in spec/plan (domain keywords, risk indicators, stakeholder hints) — skip any already unambiguous. Present options as a compact table if needed (max A-E).
+2. Read `spec.md`, `plan.md`, and `tasks.md` if it exists — only what's relevant to the chosen focus areas.
+3. Write (or append to, continuing the `CHK###` numbering) `.spec/[feature-dir]/[domain].md` — a flat file, name it something that won't collide with another artifact in the directory (`ux.md`, `security.md`, `data-quality.md`, ...). Every item evaluates completeness/clarity/consistency/measurability/coverage of the *requirements*, tagged `[Gap]`/`[Ambiguity]`/`[Conflict]`/`[Assumption]` or `[Spec §X.Y]` for ≥80% of items. Leave every new item unchecked — checkbox state belongs to the reviewer, and this skill must never check its own items (except the built-in `requirements.md` from `sdd-backlog`, which is a separate exception).
+4. Report the file path, item count, and whether it was created or appended to.
 
-- Git repo (`git rev-parse --git-dir` succeeds) → `.gitignore`.
-- `Dockerfile*` present or Docker mentioned in `plan.md` → `.dockerignore`.
-- `.eslintrc*` → `.eslintignore`; `eslint.config.*` → check its `ignores` entries instead.
-- `.prettierrc*` → `.prettierignore`.
-- Terraform files → `.terraformignore`; Helm charts → `.helmignore`.
+## Step 5: Tasks Sub-Stage (skip if `tasks.md` already exists and the user isn't asking to redo it)
 
-Use the patterns standard for the stack found in `plan.md` (e.g. Node: `node_modules/`, `dist/`, `.env*`; Python: `__pycache__/`, `.venv/`, `*.egg-info/`; Go: `vendor/`, `*.out`; Rust: `target/`; and so on for the language actually in use), plus universal patterns (`.DS_Store`, `*.tmp`, `.idea/`).
+1. Extract from `plan.md`: stack, dependencies, Evaluation Gate thresholds, project structure. Extract from `spec.md`: user stories with priorities, Risk Assessment, Success Criteria. If present, fold in `research.md`, `data-preparation.md`, `data-model.md`, and any contract file. If `.spec/constitution.md` has a non-negotiable Test-First/TDD principle, test tasks become mandatory throughout; otherwise they're optional (include only if the spec/user asks, or the constitution requires them).
+2. **Every task** follows exactly: `- [ ] T### [P?] [USn?] Action description with the exact file path` — sequential IDs, `[P]` only if parallelizable, `[USn]` only on Modeling/Experimentation and Deployment tasks (forbidden elsewhere), and a Modeling task always adds an inline Accept/Reject clause naming a fallback task.
+3. **If `plan.md` has an Evaluation Gate** (default ML case), organize into: Phase 1 Setup → Phase 2 Foundational → Phase 3 Data Preparation (checkpoint: reproducible versioned splits) → Phase 4 Modeling/Experimentation (baseline first, every task has Accept/Reject + named fallback, checkpoint: candidate selected) → Phase 5 Evaluation (formal gate, must pass before Phase 6) → Phase 6 Deployment (rollout + rollback tasks) → Final Phase Polish. (No standalone Monitoring Setup phase — this pipeline no longer has a Monitor stage; if `plan.md` sketched monitoring signals, note them as a Polish-phase follow-up instead.)
+4. **If `plan.md` has no Evaluation Gate** (confirmed non-ML), organize into: Phase 1 Setup → Phase 2 Foundational → Phase 3+ one phase per user story in priority order (Goal + Independent Test header, tests-then-implementation if TDD, checkpoint per story) → Final Phase Polish.
+5. End the document with Dependencies & Execution Order (including backward-loop edges for the ML structure), a Parallel Example block, and Implementation Strategy (MVP scope).
+6. Validate before writing: every Modeling task has Accept/Reject + fallback; no `[USn]` outside Modeling/Deployment; Evaluation phase metrics match `plan.md` exactly; every file path matches the plan's Project Structure; each user story is independently testable end-to-end.
 
-## Step 5: Parse the Task Plan
+## Step 6: Analyze Sub-Stage (read-only — recommended but skippable)
 
-Extract from `tasks.md`: phases (Setup, Foundational, Data Preparation, Modeling/Experimentation, Evaluation, Deployment, Monitoring Setup, Polish — or the non-ML fallback phases), task IDs, descriptions, file paths, `[P]` parallel markers, Accept/Reject clauses, and dependency/execution order.
+Offer to run this before Implement; proceed straight to Step 7 if the user declines.
 
-## Step 6: Execute Phase by Phase
+1. Load `spec.md`, `plan.md`, `tasks.md`, and `.spec/constitution.md` if present. Build (internally, don't dump raw artifacts) a requirements inventory (FR-###/SC-### keys), risk inventory, user-story/action inventory, task coverage mapping, and Evaluation Gate model.
+2. Run detection passes (cap 50 findings, summarize overflow): **A** Duplication, **B** Ambiguity (vague adjectives, unresolved placeholders), **C** Underspecification, **D** Constitution alignment, **E** Coverage gaps, **F** Inconsistency (terminology drift, ordering contradictions), **G** Evaluation Gate mismatch (spec vs. plan vs. tasks), **H** Constitution/ML compliance (mandated tool missing from plan).
+3. Severity: **CRITICAL** (constitution MUST violation, missing core artifact, zero-coverage baseline requirement, missing Risk Assessment on a non-confirmed-non-ML feature, Evaluation Gate mismatch) / **HIGH** (duplicate/conflicting requirement, untestable criterion, uncovered Risk mitigation, Modeling task missing Accept/Reject) / **MEDIUM** (terminology drift, missing non-functional coverage) / **LOW** (style).
+4. Produce the report per `ANALYZE-REPORT-TEMPLATE.md`. Never modify files here. If CRITICAL issues exist, recommend resolving them before Step 7; offer to suggest concrete remediation edits but never apply them automatically.
 
-- Complete each phase fully before moving to the next.
-- Run sequential tasks in order; `[P]`-marked tasks in the same phase may run together.
-- If a phase includes test tasks before implementation tasks (TDD), write and run the tests first — they should fail before the corresponding implementation exists.
-- Tasks touching the same file must run sequentially even if not both marked `[P]`.
-- Order within a phase: setup/init → tests (if any) → models → services → endpoints/UI → integration → polish.
-- **Modeling/Experimentation tasks**: run the task, record the actual metric result against its stated Accept/Reject clause. On Reject, follow the task's named fallback (return to the earlier task it points to) instead of proceeding to the next Modeling task — this is the CRISP-ML(Q) backward loop, not a failure to halt on.
-- **Evaluation phase**: run it in full and record every metric against `plan.md`'s Evaluation Gate table before touching any Deployment task (re-checked by Step 2 if this skill is re-entered).
-- Verify each phase's completion before moving to the next.
+## Step 7: Implement Sub-Stage
 
-## Step 7: Track Progress
+### 7a. Checklist Gate (read-only)
 
-- Report progress after each completed task.
-- Mark each completed task `[X]` in `tasks.md` as you finish it — this is the primary file this skill edits throughout the run; see Step 9 for the one other, conditional write.
-- On a failure in a non-parallel task, halt and report it clearly with enough context to debug, and suggest next steps.
-- On a failure in a `[P]` task, continue with the other parallel tasks and report the failed one at the end of that batch.
+Identify every checklist file in the feature directory (any `.md` other than `spec.md`/`plan.md`/`tasks.md`/`research.md`/`data-preparation.md`/`data-model.md`/`quickstart.md`/a contract file, containing `- [ ]`/`- [x]`/`- [X]` items). Show a status table (Checklist | Total | Checked | Unchecked | Status). Never modify these files. If any has unchecked items, **stop** and ask "Some checklists have unchecked items. Proceed with implementation anyway?" — only continue on explicit yes.
 
-## Step 8: Validate Completion
+### 7b. Evaluation Gate (read-only, independent of 7a)
 
-- Confirm every task in `tasks.md` is marked `[X]`.
-- Confirm the implemented feature matches the original spec.
-- Confirm the Evaluation Gate passed (or that the user explicitly approved proceeding without it, per Step 2).
-- Confirm tests pass (where applicable) and the implementation follows the technical plan.
+If `plan.md` has an Evaluation Gate: locate the Evaluation phase in `tasks.md` — it must be `[X]` with its recorded result meeting every metric/threshold row. Show a status table (Metric | Threshold | Recorded Result | Status). If not yet run or failing, **stop before any Deployment-phase task** and ask "The Evaluation Gate hasn't passed. Proceed to deployment anyway?" — only continue on explicit yes. Non-deployment phases may proceed regardless.
 
-## Step 9: Update the Epic (conditional)
+### 7c. Verify Project Setup
 
-If `spec.md`'s `Epic` field names an epic, and Step 8 confirmed full completion (every task `[X]`, and the Evaluation Gate passed or explicitly overridden by the user):
+Check for the ignore files the detected stack needs (`.gitignore` if a git repo, `.dockerignore` if Docker's involved, `.eslintignore`/`.prettierignore`/`.terraformignore`/`.helmignore` as applicable) and top up missing critical patterns — never blindly overwrite an existing file.
 
-- Open that epic's `.spec/NN-epic-name/epic.md` and find the Feature Backlog row whose Status cell links to this feature's `spec.md` — match by that link, not by feature name, since names can drift. Flip its Status from `Specified` to `Implemented`.
-- Don't touch any other row, table, or section in `epic.md` — phase reports are `sdd-epic`'s job (its Phase Report flow), not this skill's.
-- If this was the last row in its CRISP-ML(Q) phase to reach `Implemented`, note that in Step 10's closing report.
+### 7d. Execute Phase by Phase
 
-Skip this step entirely for a standalone feature (no `Epic` field) or if completion wasn't full.
+Complete each phase fully before the next. Sequential tasks in order; `[P]` tasks in the same phase may run together, but tasks touching the same file run sequentially regardless of markers. Order within a phase: setup/init → tests (if any, TDD-style, must fail first) → models → services → endpoints/UI → integration → polish. **Modeling tasks**: record the actual metric against the stated Accept/Reject clause; on Reject, follow the named fallback task instead of proceeding — this is the CRISP-ML(Q) backward loop, not a failure to halt on. **Evaluation phase**: run in full, record every metric against `plan.md`'s Evaluation Gate table before touching any Deployment task.
 
-## Step 10: Closing
+### 7e. Track Progress
 
-Report final status: summary of completed work, any tasks left incomplete and why, test results, and anything that still needs manual follow-up.
+Report after each completed task. Mark each `[X]` in `tasks.md` as you finish it. On a non-parallel failure, halt and report with debugging context. On a `[P]` failure, continue the rest of the batch and report the failure at the end of it.
 
-Generate a short **model/experiment summary** (skip for a confirmed non-ML feature): what approaches were tried in Modeling/Experimentation, the final metrics vs. the Evaluation Gate thresholds, and where artifacts were logged in the experiment-tracking tool.
+### 7f. Validate Completion
 
-If Step 9 flipped this feature's epic backlog row to `Implemented`, say so, and if it was the last row in its phase, recommend re-running `sdd-epic` against that epic to generate the phase's completion report.
+Confirm every task is `[X]`, the implementation matches `spec.md`, the Evaluation Gate passed (or was explicitly overridden), and tests pass where applicable.
 
-Suggest `sdd-monitor` as the next step to set up drift detection, retraining triggers, and a rollback runbook before or shortly after this feature ships.
+### 7g. Update the Epic (conditional)
+
+If `spec.md` has an `Epic` field and 7f confirmed full completion: open that epic's `epic.md`, find the row whose Status cell links to this feature's `spec.md` (match by link, not name), flip Status to `Implemented`. Don't touch anything else — phase reports are `sdd-backlog`'s job. Note in Step 8 if this was the last row in its phase.
+
+## Step 8: Closing
+
+Report final status: completed work, any incomplete tasks and why, test results, follow-ups needed. Generate a short model/experiment summary (skip if confirmed non-ML): approaches tried in Modeling/Experimentation, final metrics vs. Evaluation Gate thresholds, where logged. If 7g flipped an epic row, say so, and if it was the phase's last row, recommend re-running `sdd-backlog` against that epic to generate the phase's completion report.

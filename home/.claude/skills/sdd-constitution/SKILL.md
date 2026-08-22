@@ -6,13 +6,23 @@ user_invocable: true
 
 # Project Constitution Generator (Governance & Development Guidelines)
 
-This skill guides Claude to act as a Staff ML Engineer responsible for defining a project's technical governance principles. The goal is to produce (or amend) `.spec/constitution.md`: a small, non-negotiable set of principles that will guide — and act as a validation gate for — all subsequent development (specs, plans, and tasks).
+This skill guides Claude to act as a Staff ML Engineer responsible for defining a project's technical governance principles. The goal is to produce (or amend) `.spec/constitution.md`: a small, non-negotiable set of principles that will guide — and act as a validation gate for — all subsequent development.
 
-**Position in the SDD pipeline**: Constitution is the foundation of the pipeline. It runs first, before `sdd-specify`, and every spec, plan, and task list generated afterward must comply with it. Output: `.spec/constitution.md`.
+**Position in the SDD pipeline**: runs first, standalone, before any epic or feature work (`sdd-backlog`, `sdd-implement`). Those skills check `.spec/constitution.md` for conflicts but don't hard-require it to exist — if it's missing, they warn and suggest running this skill first, then proceed anyway. Output: `.spec/constitution.md`.
 
 There is no separate "brownfield" or "greenfield" procedure here. The process is always the same: pull in whatever real evidence the project already offers, and ask the user directly for anything that evidence can't answer. A brand-new repository just means there's less to infer — not a different flow.
 
 **Default assumption**: this pipeline is CRISP-ML(Q)-native — it assumes the project trains, fine-tunes, prompts, or otherwise ships a model/LLM-backed system unless the evidence says otherwise. Treat a plain software project as the edge case: fall back to it only when the repository shows no ML signal (no model artifacts, training code, prompts, notebooks, experiment-tracking config, or ML/LLM framework dependencies) and the user confirms there's no model involved.
+
+## Directory conventions
+
+Everything the SDD pipeline produces lives under one folder, `.spec/`. This skill only ever writes `.spec/constitution.md`, but the full layout (relevant to the other two `sdd-*` skills too) is:
+
+- `.spec/constitution.md` — the project's governance principles, global, persists across features and epics.
+- `.spec/NN-epic-name/` — one directory per **epic**, `NN` zero-padded to 2 digits. Contains `epic.md` and, when warranted, `shared-data-model.md`, plus `reports/<phase-name>-report.md`.
+- `.spec/NN-epic-name/[phase][nn]-feature-name/` — one directory per **feature that belongs to an epic**, nested under that epic, named after its Feature Backlog ID (e.g. `dp01-document-parse`).
+- `.spec/00NNN-feature-name/` — one directory per **standalone feature** (no epic), flat at the `.spec/` root, `NNN` zero-padded to 3 digits.
+- Either kind of feature directory contains `spec.md`, `plan.md`, `tasks.md`, plus optional artifacts and flat checklist/contract files — no subfolders.
 
 ---
 
@@ -53,42 +63,9 @@ If the user confirms this is a traditional, non-ML project, fall back to the cla
 
 Present the resulting principles — inferred and interviewed alike — to the user in short blocks (3-5 at a time), asking for confirmation, edits, or removal. Do not write anything to `.spec/constitution.md` before that confirmation.
 
-## Step 3: Document Structure
+## Step 3: Write the Document
 
-Write (or amend) `.spec/constitution.md` following strictly this structure (based on spec-kit's `constitution-template.md`):
-
-```markdown
-# [PROJECT NAME] Constitution
-
-## Core Principles
-
-### [PRINCIPLE_1_NAME]
-[Non-negotiable rule in 1-2 sentences + rationale for why it exists, if not obvious]
-
-### [PRINCIPLE_2_NAME]
-...
-
-## [EXTRA SECTION, e.g. Data Governance / Model Risk & Responsible AI / Evaluation Standards / Technology Constraints]
-
-[Content — include extra sections only when they make sense for this project; don't force a fixed count]
-
-## Development Workflow
-
-[Code review requirements, quality gates, approval process — if applicable]
-
-## Governance
-
-[Amendment process: who approves, how to version, compliance-review expectations for future specs/plans/tasks]
-
-**Version**: [X.Y.Z] | **Ratified**: [DATE] | **Last Amended**: [DATE]
-```
-
-Content rules:
-- Every principle must be **declarative and testable** (use MUST/SHOULD/MUST NOT, not "should ideally"). If a principle can't be objectively verified during a spec/plan review, rewrite it.
-- Don't force a fixed number of principles — use as many as the user considers essential (typically 3-7). A few strong principles beat many generic ones.
-- Fields that can't be resolved (e.g. an unknown ratification date in an existing project) become `TODO(FIELD): explanation`, never an invented value.
-
----
+Read `CONSTITUTION-TEMPLATE.md` for the exact structure and content rules, then write (or amend) `.spec/constitution.md` following it precisely.
 
 ## Step 4: Semantic Versioning (for amendments to an existing constitution)
 
@@ -100,23 +77,11 @@ If `.spec/constitution.md` already exists, when updating it:
    - **PATCH**: clarification, wording fix, non-semantic adjustment.
    - If the bump type is ambiguous, explain the reasoning to the user before finalizing.
 2. Update `Last Amended` to today's date; keep `Ratified` as the original date.
-3. Prepend, as an HTML comment at the top of the file, a **Sync Impact Report**:
-   ```html
-   <!--
-   Sync Impact Report
-   Version change: [X.Y.Z] → [X.Y.Z]
-   Modified principles: [list, or "none"]
-   Added sections: [list, or "none"]
-   Removed sections: [list, or "none"]
-   Follow-up TODOs: [list, or "none"]
-   -->
-   ```
-
----
+3. Prepend the Sync Impact Report (see `CONSTITUTION-TEMPLATE.md`) as an HTML comment at the top of the file.
 
 ## Step 5: Closing
 
 Report to the user:
 - The file path (`.spec/constitution.md`), the new version, and the bump rationale (if an amendment).
 - Any pending `TODO(...)` that needs a manual decision.
-- A suggested next step: run `sdd-specify` for the first feature under the new constitution.
+- A suggested next step: run `sdd-backlog` to declare the first epic or feature under the new constitution.
