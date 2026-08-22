@@ -17,6 +17,8 @@ require("lazy").setup({
   -- Configure any other `lazy.nvim` configuration options here
   install = { colorscheme = { "astrotheme", "habamax" } },
   ui = { backdrop = 100 },
+  rocks = { enabled = false }, -- no plugins here need luarocks; hererocks build fails to compile lua5.1 on WSL
+
   performance = {
     rtp = {
       -- disable some rtp plugins, add more to your liking
