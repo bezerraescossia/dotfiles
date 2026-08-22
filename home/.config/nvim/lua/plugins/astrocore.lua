@@ -73,7 +73,7 @@ return {
 
         -- toggle symbols outline (aerial.nvim)
         ["<Leader>o"] = {
-          function() require("aerial").toggle { direction = "left" } end,
+          function() require("aerial").toggle { direction = "right" } end,
           desc = "Toggle symbols outline",
         },
 
