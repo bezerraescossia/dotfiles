@@ -42,3 +42,5 @@ sdd-constitution → sdd-backlog (Epic + Specify + Clarify, per feature) → sdd
 
 - [`teach`](./teach/SKILL.md) — teach the user a new skill or concept within a stateful workspace (mission, lessons, reference docs, learning records).
 - [`grilling`](./grilling/SKILL.md) — grill the user relentlessly about a plan, decision, or idea.
+- [`python-project-init`](./python-project-init/SKILL.md) — scaffold a new Python project from the `~/.templates/python-default` Copier template (uv, hatchling, src-layout, ruff, mypy, pytest, taskipy, pre-commit, git guardrails).
+- [`pre-commit-setup`](./pre-commit-setup/SKILL.md) — add or update pre-commit hooks on an existing project (Python, Rust, or TypeScript).
