@@ -1,0 +1,24 @@
+# {{ project_name }}
+
+{{ description }}
+
+## Structure
+
+## Development
+
+```bash
+uv sync
+uv run pre-commit install
+```
+
+## Common tasks
+
+| Command | What it does |
+| --- | --- |
+| `uv run task test` | Run the test suite |
+| `uv run task test-cov` | Run tests with coverage |
+| `uv run task lint` | Lint with ruff |
+| `uv run task format` | Format with ruff |
+| `uv run task typecheck` | Type-check with mypy |
+| `uv run task check` | Lint + typecheck + test |
+| `uv run task precommit` | Run all pre-commit hooks on all files |

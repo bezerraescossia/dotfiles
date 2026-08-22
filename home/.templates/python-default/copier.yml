@@ -1,0 +1,31 @@
+_subdirectory: template
+_templates_suffix: ".jinja"
+
+project_name:
+  type: str
+  help: Project name (human-readable)
+
+project_slug:
+  type: str
+  help: Repository / distribution name (kebab-case)
+  default: "{{ project_name.lower().replace(' ', '-').replace('_', '-') }}"
+
+description:
+  type: str
+  help: Short project description
+  default: ""
+
+author_name:
+  type: str
+  help: Author name
+  default: "Rafael B. Escóssia"
+
+author_email:
+  type: str
+  help: Author email
+  default: "bezerraescossia@gmail.com"
+
+python_version:
+  type: str
+  help: Target Python version
+  default: "3.13"
