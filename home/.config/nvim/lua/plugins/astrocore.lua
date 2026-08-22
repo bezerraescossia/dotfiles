@@ -71,9 +71,9 @@ return {
           desc = "Close buffer from tabline",
         },
 
-        -- toggle symbols outline (aerial.nvim)
+        -- toggle symbols outline (neo-tree document_symbols source, left panel)
         ["<Leader>o"] = {
-          function() require("aerial").toggle { direction = "right" } end,
+          "<Cmd>Neotree toggle document_symbols left<CR>",
           desc = "Toggle symbols outline",
         },
 

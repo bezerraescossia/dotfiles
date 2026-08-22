@@ -10,6 +10,8 @@ return {
         -- install language servers
         "lua-language-server",
         "pyright",
+        "json-lsp",
+        "marksman",
 
         -- install formatters
         "stylua",
