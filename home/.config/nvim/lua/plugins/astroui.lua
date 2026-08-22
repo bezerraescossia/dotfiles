@@ -18,6 +18,19 @@ return {
       astrodark = { -- a table of overrides/changes when applying the astrotheme theme
         -- Normal = { bg = "#000000" },
       },
+      oxocarbon = { -- a table of overrides/changes when applying the oxocarbon theme
+        SnacksPickerListCursorLine = { bg = "#afc5cc" }, -- cursor line in find/grep picker results (Snacks)
+      },
+    },
+    -- lazygit run inside nvim gets its theme generated from Neovim highlight groups
+    -- (see astroui-lazygit-config.yml), not from ~/.config/lazygit/config.yml, so it
+    -- needs its own override here
+    lazygit = {
+      theme = {
+        -- oxocarbon's FloatBorder is nearly the same color as the background (by design,
+        -- for a borderless float look), which made inactive panel borders invisible
+        inactiveBorderColor = { fg = "Comment" },
+      },
     },
     -- Icons can be configured throughout the interface
     icons = {
