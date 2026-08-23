@@ -1,3 +1,8 @@
+-- Set by <leader>ts before triggering a load, so load_coverage_cb below
+-- knows to pop the summary open once loading finishes. Left false for
+-- plain CoverageLoad calls and auto_reload refreshes, so those stay silent.
+local pending_summary = false
+
 return {
   {
     "andythigpen/nvim-coverage",
@@ -13,8 +18,15 @@ return {
     },
     keys = {
       { "<leader>tc", "<cmd>CoverageToggle<cr>", desc = "Toggle coverage signs" },
-      { "<leader>tl", "<cmd>CoverageLoad<cr>", desc = "Load coverage report" },
-      { "<leader>ts", "<cmd>CoverageSummary<cr>", desc = "Coverage summary" },
+      { "<leader>to", "<cmd>CoverageLoad<cr>", desc = "Load coverage report" },
+      {
+        "<leader>ts",
+        function()
+          pending_summary = true
+          require("coverage").load(false)
+        end,
+        desc = "Load coverage report and show summary",
+      },
       { "<leader>th", "<cmd>CoverageHide<cr>", desc = "Hide coverage signs" },
       { "<leader>tx", "<cmd>CoverageClear<cr>", desc = "Clear coverage data" },
     },
@@ -22,6 +34,12 @@ return {
       require("coverage").setup {
         commands = true, -- create the :Coverage* user commands
         auto_reload = true, -- automatically reload the report when it changes
+        load_coverage_cb = function()
+          if pending_summary then
+            pending_summary = false
+            require("coverage").summary()
+          end
+        end,
         highlights = {
           covered = { fg = "#C3E88D" },
           uncovered = { fg = "#F07178" },
@@ -36,6 +54,7 @@ return {
         lang = {
           python = {
             coverage_file = ".coverage",
+            coverage_command = "uv run coverage json --show-contexts -q -o -",
           },
         },
       }
