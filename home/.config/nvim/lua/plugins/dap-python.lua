@@ -9,6 +9,17 @@ return {
       -- interpreter to debug (pythonPath) by looking for .venv/venv/env/.env
       -- next to the file, so per-project virtualenvs are picked up automatically
       require("dap-python").setup(vim.fn.stdpath "data" .. "/mason/packages/debugpy/venv/bin/python")
+
+      local dap = require "dap"
+      table.insert(dap.configurations.python, {
+        type = "python",
+        request = "launch",
+        name = "pytest:file",
+        module = "pytest",
+        args = { "${file}", "-v" },
+        console = "integratedTerminal",
+        justMyCode = false,
+      })
     end,
   },
   {
