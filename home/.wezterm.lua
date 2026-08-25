@@ -6,7 +6,10 @@ config.font = wezterm.font("Hack Nerd Font")
 config.font_size = 15.0
 config.window_background_opacity = 0.95
 config.hide_tab_bar_if_only_one_tab = true
-config.window_decorations = "NONE"
+-- "NONE" is known to un-maximize the window on GNOME/Wayland (Mutter) whenever
+-- focus moves to another window and back (https://github.com/wezterm/wezterm/issues/2375).
+-- "RESIZE" keeps the title bar hidden while avoiding that bug.
+config.window_decorations = "RESIZE"
 
 config.front_end = "OpenGL"
 config.animation_fps = 60
