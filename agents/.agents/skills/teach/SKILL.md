@@ -1,17 +1,22 @@
 ---
 name: teach
-description: Teach the user one concept -- always alongside the alternatives it competes with and when each one wins -- until they can make the decision, then leave a lesson at ~/Work/lessons-learned/<topic>/LESSON.md and spaced-repetition cards at QUESTIONS.md. Use when the user asks to be taught or to genuinely understand something -- "teach me X", "I don't understand these options", "what are the tradeoffs between A and B", "explain X properly" -- and especially when a decision is blocked because the alternatives aren't understood. Not for ordinary code explanations or a one-line factual answer.
+description: Research one concept -- always alongside the alternatives it competes with and when each one wins -- and write it up as a lesson at ~/Work/lessons-learned/<topic>/LESSON.md with spaced-repetition cards at QUESTIONS.md. The explanation goes in the file, not in the chat. Use when the user asks to be taught or to genuinely understand something -- "teach me X", "I don't understand these options", "what are the tradeoffs between A and B", "explain X properly" -- and especially when a decision is blocked because the alternatives aren't understood. Not for ordinary code explanations or a one-line factual answer.
 ---
 
 # Teach
 
-One concept, one session. The session is over when the user can **make the decision
-and defend it**, not when the explanation is finished.
+One concept, one session. The lesson is done when someone reading **only the file**
+could make the decision and defend it — not when the explanation is finished.
 
 A concept taught alone is a definition. A concept taught next to what it competes
 with, and the conditions under which each one wins, is a decision the user can
 actually make — so **every lesson carries a decision section**, including the ones
 asked for as a bare noun.
+
+**The explanation lives in the file, never in the chat reply.** Do not deliver the
+lesson, an outline of it, a summary of it, or a preview of the options table in the
+conversation. Research it, write it, and report where it landed (section 5).
+Questions are still welcome in the chat — clarifying ones, not teaching ones.
 
 Every run leaves two artifacts:
 
@@ -66,7 +71,7 @@ Alternatives must be genuine contenders on the same question. "Não documentar" 
 a status quo row, not a strawman; a tool that solves a different problem entirely
 is not an alternative and padding the table with one is dishonest.
 
-## 1. Get the facts right before opening your mouth
+## 1. Get the facts right before writing a word
 
 Pretrained knowledge is a draft, not a source. In order of weight:
 
@@ -86,8 +91,8 @@ number, a default, a limit, a version, or a rival's name, verify it.
 
 Every source you actually opened goes in the lesson's `## Fontes`, with one line on
 what was taken from it. **Never cite a URL you did not fetch.** Anything you could
-not verify is taught flagged as uncertain and flagged in the file too — a hedge the
-user can see is worth far more than confidence they cannot check.
+not verify goes in the file flagged as uncertain — a hedge the user can see is
+worth far more than confidence they cannot check.
 
 ## 2. Calibrate, once
 
@@ -96,65 +101,11 @@ evidence of what the user already knows; read it, build on it, and link it with
 `[[slug]]` instead of re-teaching it.
 
 Then at most **one** calibration question, and only if the answer would genuinely
-change how you explain. This skill is `grill-me`'s opposite: here you do the
-talking, and the testing comes at the end.
+change how you write it. Ask anything that is genuinely unclear — which of three
+topics they meant, which decision this is for, which stack it applies to — but do
+not interview them about what they want taught, and do not quiz them.
 
-## 3. Teach — in the conversation, not in a file
-
-Deliver the whole explanation in the chat first. The file records a lesson that
-happened; it does not replace one.
-
-1. **The problem first.** Every concept is an answer to a question. Teach the
-   question. The user should feel the pain before hearing the name of the cure.
-2. **The mechanism.** How it works one level below the buzzword. If you cannot say
-   mechanically what it does, you do not understand it well enough to teach it.
-3. **One concrete example, from their world** — their repo, their decision, their
-   data. Generic `foo`/`bar` is the sound of a lesson not landing.
-4. **Name the tradeoff axis.** Nearly every "which option?" is one axis wearing a
-   costume (latency vs. cost, coupling vs. duplication, who owns failure). Name the
-   axis and the options stop needing to be memorized — they become derivable.
-5. **The options table — always, not only when the user framed a choice:**
-
-   ```markdown
-   | Opção | Como funciona | Ganha | Custa | Escolha quando |
-   |---|---|---|---|---|
-   ```
-
-   Every **Escolha quando** cell states an *observable condition* — "quando o
-   caller já tem seu próprio orçamento de latência" — never "quando fizer sentido".
-   That column is the roadmap: the user should be able to read only it and decide.
-   The table carries the taught concept, the real alternatives, and the status quo
-   row from section 0 — one row each, judged on the same criteria.
-6. **Recommend, for their case, with the reason — and say what would change your
-   mind.** A teacher who refuses to recommend leaves the user exactly as stuck as
-   they started.
-7. **Mark what is contested.** Where practitioners genuinely disagree, say so and
-   say why. Where a question is settled, say that too. Confidence is information.
-
-Depth over coverage: three things understood beat nine things listed. Write prose,
-not an outline of headings with a sentence under each.
-
-## 4. Check before you write
-
-Ask **2–3 retrieval questions and wait for answers.** This step is not optional and
-does not happen after the files are written.
-
-- **Free recall, not multiple choice.** Recognition impersonates understanding and
-  then dies in the first drill.
-- **At least one application question**: "dado <a situação real do usuário>, qual
-  você escolheria, e o que mudaria sua resposta?"
-- **At least one question probes the decision map**: "em que situação você *não*
-  usaria isto, e o que usaria no lugar?" Someone who cannot answer that learned a
-  definition, not a decision.
-- **Grade honestly and specifically.** "Quase lá" teaches nothing — say which part
-  is wrong and why.
-- A miss on something fundamental means **teach that part again, now**. Do not
-  write files over a hole in the lesson.
-
-What the user got wrong is the most valuable output of the session: it decides what
-the lesson emphasizes and which cards get written.
-
-## 5. Write the lesson
+## 3. Write the lesson
 
 ```
 ~/Work/lessons-learned/<topico-em-kebab-case>/LESSON.md
@@ -164,6 +115,32 @@ the lesson emphasizes and which cards get written.
 slug — `agentes-react` and `padrao-react` are the same lesson. If one exists,
 **extend it**: add to its sections, add a dated line to the header, and leave what
 is already written alone. Never create a rival file on the same subject.
+
+The bar for what goes in the file — all of it, in prose, not an outline of headings
+with a sentence under each:
+
+1. **The problem first.** Every concept is an answer to a question. Write the
+   question. The reader should feel the pain before hearing the name of the cure.
+2. **The mechanism.** How it works one level below the buzzword. If you cannot say
+   mechanically what it does, you do not understand it well enough to write it.
+3. **One concrete example, from their world** — their repo, their decision, their
+   data. Generic `foo`/`bar` is the sound of a lesson not landing.
+4. **Name the tradeoff axis.** Nearly every "which option?" is one axis wearing a
+   costume (latency vs. cost, coupling vs. duplication, who owns failure). Name the
+   axis and the options stop needing to be memorized — they become derivable.
+5. **The options table — always, not only when the user framed a choice.** Every
+   **Escolha quando** cell states an *observable condition* — "quando o caller já
+   tem seu próprio orçamento de latência" — never "quando fizer sentido". That
+   column is the roadmap: the user should be able to read only it and decide. The
+   table carries the taught concept, the real alternatives, and the status quo row
+   from section 0 — one row each, judged on the same criteria.
+6. **Recommend, for their case, with the reason — and say what would change your
+   mind.** A lesson that refuses to recommend leaves the user exactly as stuck as
+   they started.
+7. **Mark what is contested.** Where practitioners genuinely disagree, say so and
+   say why. Where a question is settled, say that too. Confidence is information.
+
+Depth over coverage: three things understood beat nine things listed.
 
 ```markdown
 # <Conceito>
@@ -193,7 +170,8 @@ Uma seção obrigatória, mesmo quando a aula foi pedida como um substantivo sol
 <a escolha para o caso do usuário, o porquê, e o que mudaria essa escolha>
 
 ## Armadilhas
-<os erros cometidos na checagem da seção 4, escritos como aviso>
+<onde as pessoas tropeçam na prática: o erro comum, por que ele é tentador, e o
+que fazer no lugar. Vem da pesquisa da seção 1, não de suposição.>
 
 ## Não confunda com
 <os vizinhos próximos que costumam ser confundidos com isto>
@@ -205,7 +183,7 @@ Uma seção obrigatória, mesmo quando a aula foi pedida como um substantivo sol
 The lesson stands alone: no "como discutimos", no "a opção acima", nothing that
 depends on this conversation still being in scroll-back.
 
-## 6. Write the cards
+## 4. Write the cards
 
 `QUESTIONS.md`, beside the lesson. `repeater`'s format, exactly:
 
@@ -240,17 +218,19 @@ again; write a distinct, deeper card instead.
 | Prefer *por quê* and *quando* over *o quê*. | Definition cards are cheap and change no decision. "Quando escolher X em vez de Y?" is the card that pays off. |
 | One card per **Escolha quando** row of the decision table — the alternatives and the status quo included, not only the taught concept. | That is the whole point of the lesson. |
 | At least one card asks when *not* to use the taught concept, and what wins instead. | Knowing where a tool stops is what separates choosing it from defaulting to it. |
-| Every mistake from section 4 becomes a card. | Non-negotiable — the known gap is the highest-value card in the deck. |
+| At least one card comes from `## Armadilhas`. | The pitfall is where the knowledge actually gets tested. |
 | No yes/no answers. | They are guessable, so they measure nothing. |
 | The answer must be short enough to grade yourself honestly. | If you can't tell whether you got it right, the card is broken. |
 | 5–10 cards per session. | More is not retention, it's a chore that gets abandoned. |
 
-## 7. Close the session
+## 5. Close the session
 
-Report, briefly:
+The reply is a receipt, not a lesson. At most:
 
-- The decision the user arrived with, answered in one line. That is what this was for.
+- The decision the user arrived with, answered in **one line** — no reasoning, no
+  options, no preview of the table. That lives in the file.
 - The two paths written, and the card count.
+- Anything you could not verify, named in one line so they know what to distrust.
 - How to drill:
 
 ```bash
@@ -262,16 +242,15 @@ repeater drill ~/Work/lessons-learned            # tudo
 
 | Failure | Required behaviour instead |
 |---|---|
-| Writing the files without teaching and checking in the conversation first. | Sections 3 and 4 come first, always — unless the user explicitly says "just write it". |
+| Explaining the concept in the chat — the mechanism, the options, a "quick summary", a preview of the table. | The file is the deliverable. The reply is section 5's receipt and nothing more. |
+| Quizzing the user, or grading them, in the conversation. | Drilling is `repeater`'s job, from the cards. `grill-me` is the skill for testing. |
 | Listing options with pros and cons but no "escolha quando" and no recommendation. | Both are mandatory. Balanced-sounding paralysis is the exact failure this skill exists to prevent. |
-| Teaching a concept the user named as a noun as though it had no rivals — "teach me *diataxis*" answered with only Diátaxis. | Reconstruct the question it answers, name the real alternatives and the status quo, and fill the decision section. This is never optional and never inferred from how the request was phrased. |
+| Writing up a concept the user named as a noun as though it had no rivals — "teach me *diataxis*" answered with only Diátaxis. | Reconstruct the question it answers, name the real alternatives and the status quo, and fill the decision section. This is never optional and never inferred from how the request was phrased. |
 | Naming alternatives from memory, or padding the table with things that answer a different question. | Verify each one exists and is current (section 1). Two honest alternatives beat five invented ones, and the status quo row is always one of them. |
-| Teaching a survey when the user was blocked on a decision. | Re-read *why now*. The options in the marker are the spine of the lesson. |
-| Citing a source you didn't fetch, or stating a version, default or limit from memory. | Fetch it, or teach it flagged as uncertain — in the chat *and* in `## Fontes`. |
-| Multiple-choice comprehension questions. | Free recall. Recognition is not retention. |
-| Proceeding to the files after the user missed something fundamental. | Teach that part again first. |
+| Writing a survey when the user was blocked on a decision. | Re-read *why now*. The options in the marker are the spine of the lesson. |
+| Citing a source you didn't fetch, or stating a version, default or limit from memory. | Fetch it, or write it flagged as uncertain — in `## Fontes` and in the closing receipt. |
 | Rewriting or reordering an existing `QUESTIONS.md`. | Append only. Existing cards carry review history. |
 | A second lesson file on a topic already covered. | Find it by meaning and extend it. |
-| Twenty cards "to be thorough". | 5–10, weighted toward what the user actually got wrong. |
+| Twenty cards "to be thorough". | 5–10, weighted toward the decision table and the pitfalls. |
 | A lesson that only makes sense with this conversation in scroll-back. | It must read standalone in six months. |
-| Interviewing the user about what they want taught. | One calibration question at most. `grill-me` is the skill for interviewing; this one is for teaching. |
+| Interviewing the user about what they want taught. | One calibration question at most, and only when the answer changes what you write. |
