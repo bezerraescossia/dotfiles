@@ -22,22 +22,45 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
--- <F4> runs the current file with plain `python3` in a Snacks terminal
--- split, for when you just want to see stdout without attaching the
--- debugger (already on <F5> via nvim-dap). `python3` resolves through
--- $PATH, which python_venv_autodetect above keeps pointed at the active
--- venv, so this picks up the same interpreter dap-python would use.
+-- <F4> toggles the same shared terminal as <c-/> (LazyVim's root-dir
+-- terminal) and, when that toggle opens it, runs the current file with
+-- `python3` in it -- for when you just want to see stdout without
+-- attaching the debugger (already on <F5> via nvim-dap). `python3`
+-- resolves through $PATH, which python_venv_autodetect above keeps
+-- pointed at the active venv, so this picks up the same interpreter
+-- dap-python would use. Pressing <F4> again (or <c-/>) closes it, same
+-- as any other toggle; pressing it once more re-runs the file.
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "python",
   group = vim.api.nvim_create_augroup("python_run_file", { clear = true }),
   callback = function(ev)
     vim.keymap.set("n", "<F4>", function()
       vim.cmd("silent! update")
-      Snacks.terminal({ "python3", vim.api.nvim_buf_get_name(ev.buf) }, {
-        win = { position = "bottom" },
-        interactive = false,
-      })
-    end, { buffer = ev.buf, desc = "Run: Python file (no debug)" })
+      local root = LazyVim.root()
+      local file = vim.api.nvim_buf_get_name(ev.buf)
+      local rel = vim.fs.relpath(root, file) or file
+      local prev_win = vim.api.nvim_get_current_win()
+      -- `interactive = false` avoids auto-insert, but opening/showing the
+      -- terminal window still steals focus, so we restore it below -
+      -- keeping the cursor in the python buffer means repeated <F4>
+      -- presses keep hitting this buffer-local mapping to toggle/rerun.
+      local term, created = Snacks.terminal.get(nil, { cwd = root, interactive = false })
+      term = assert(term)
+      -- `get` opens (and shows) a brand new terminal itself; for one that
+      -- already existed we still need to toggle it open/closed ourselves.
+      local run = created
+      if not created then
+        local was_open = term:valid()
+        term:toggle()
+        run = not was_open
+      end
+      if run then
+        vim.fn.chansend(vim.b[term.buf].terminal_job_id, "python3 ./" .. rel .. "\r")
+      end
+      if vim.api.nvim_win_is_valid(prev_win) then
+        vim.api.nvim_set_current_win(prev_win)
+      end
+    end, { buffer = ev.buf, desc = "Toggle terminal: run Python file" })
   end,
 })
 

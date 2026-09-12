@@ -3,6 +3,12 @@ return {
   dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
   ft = { "markdown" },
   opts = {
+    html = {
+      comment = {
+        -- Keep HTML comments visible instead of concealing them off-cursor.
+        conceal = false,
+      },
+    },
     heading = {
       icons = function(ctx)
         if ctx.level == 1 then
