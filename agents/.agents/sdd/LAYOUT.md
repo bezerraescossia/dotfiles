@@ -1,6 +1,6 @@
 # Layout, identifiers and statuses
 
-**Version**: 1.0.0
+**Version**: 1.1.0
 
 Everything the pipeline produces lives under one directory at the project root.
 
@@ -12,12 +12,21 @@ Everything the pipeline produces lives under one directory at the project root.
 │   ├── requirements.md        # business context, capabilities, architecture decision log
 │   ├── README.md              # the component index -- the pipeline's work queue
 │   └── <component>.md         # one detailed spec per component
+├── lessons/
+│   └── <topico>.md            # lessons written by `teach`, when a decision was
+│                              # blocked by a concept nobody had a grip on
 └── toolkit/
     ├── sdd.py                 # the checker (vendored by `sdd.py init`)
     ├── ARTIFACT-CONTRACT.md   # versioning rules
     ├── UNCLEAR-PROTOCOL.md    # [!UNCLEAR] rules
     └── LAYOUT.md              # this file
 ```
+
+`lessons/` is for humans, not for the checker: `sdd.py` never reads it, so a lesson
+carries no version header, no Sync Impact Report and no id. It gates nothing — it
+exists so the reasoning behind a resolved `[!UNCLEAR]` survives next to the decision
+it produced. Its spaced-repetition cards do **not** live here; they go to one global
+deck outside the project. See the `teach` skill.
 
 The toolkit is **vendored into the project** rather than referenced from the skill
 directory, so every stage invokes it at one stable, project-relative path:

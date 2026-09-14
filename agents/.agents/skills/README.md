@@ -27,7 +27,7 @@ Two skills sit outside the pipeline, for the two ways a stage stalls:
 | Skill | Use when |
 |---|---|
 | `grill-me` | The design is under-examined. A relentless breadth-first interview that surfaces every decision hanging off every other one. |
-| `teach` | A decision is blocked because its options aren't understood. Teaches one concept, then writes a lesson and `repeater` cards to `~/Work/lessons-learned/<topic>/`. |
+| `teach` | A decision is blocked because its options aren't understood. Teaches one concept, then writes the lesson to the project's `.specify/lessons/<topic>.md` and appends `repeater` cards to the global deck at `~/Work/lessons-learned/QUESTIONS.md`. |
 
 An `[!UNCLEAR]` marker you cannot answer is a `teach` session, not a guess.
 

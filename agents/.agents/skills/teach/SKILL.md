@@ -1,6 +1,6 @@
 ---
 name: teach
-description: Research one concept -- always alongside the alternatives it competes with and when each one wins -- and write it up as a lesson at ~/Work/lessons-learned/<topic>/LESSON.md with spaced-repetition cards at QUESTIONS.md. The explanation goes in the file, not in the chat. Use when the user asks to be taught or to genuinely understand something -- "teach me X", "I don't understand these options", "what are the tradeoffs between A and B", "explain X properly" -- and especially when a decision is blocked because the alternatives aren't understood. Not for ordinary code explanations or a one-line factual answer.
+description: Research one concept -- always alongside the alternatives it competes with and when each one wins -- and write it up as a lesson inside the project it belongs to, at .specify/lessons/<topic>.md, falling back to ~/Work/lessons-learned/<topic>.md outside a repo -- with spaced-repetition cards appended to the one shared deck at ~/Work/lessons-learned/QUESTIONS.md. The explanation goes in the file, not in the chat. Use when the user asks to be taught or to genuinely understand something -- "teach me X", "I don't understand these options", "what are the tradeoffs between A and B", "explain X properly" -- and especially when a decision is blocked because the alternatives aren't understood. Not for ordinary code explanations or a one-line factual answer.
 ---
 
 # Teach
@@ -18,12 +18,16 @@ lesson, an outline of it, a summary of it, or a preview of the options table in 
 conversation. Research it, write it, and report where it landed (section 5).
 Questions are still welcome in the chat — clarifying ones, not teaching ones.
 
-Every run leaves two artifacts:
+Every run leaves two artifacts, and they live in **different places on purpose**:
 
 | File | What it is |
 |---|---|
-| `~/Work/lessons-learned/<topic>/LESSON.md` | The explanation, re-readable in six months by someone who wasn't in this conversation. |
-| `~/Work/lessons-learned/<topic>/QUESTIONS.md` | `repeater` cards, drilled with spaced repetition. |
+| `<projeto>/.specify/lessons/<topic>.md` | The explanation, beside the code whose decision prompted it and committed with it. One flat file per lesson — never a folder. Section 3 resolves the directory. |
+| `~/Work/lessons-learned/QUESTIONS.md` | The single global deck of `repeater` cards — every lesson from every project, each under its own `## <topic>` heading. Appended to, never rewritten. |
+
+The lesson is project context: it explains a decision the repo now carries, so it belongs
+to the repo. The cards are a daily habit: one deck means one `repeater drill`, and a
+project you archive next year doesn't quietly take its cards out of rotation with it.
 
 Both are written in **pt-BR**, technical terms kept in English and italicised —
 matching the user's existing deck at `~/Work/cards/agent-engineering.md`.
@@ -40,6 +44,13 @@ Three things to pin down, mostly by inference rather than by asking:
   session came out of an SDD `[!UNCLEAR]` marker or an architecture decision, that
   marker's **Options** are the spine of the lesson; read the artifact it lives in
   before teaching anything.
+- **What the project has already settled.** When a `.specify/` was found, read
+  `memory/constitution.md`, `specs/requirements.md` and the spec that raised the
+  marker *before* teaching. A NON-NEGOTIABLE principle or a decided `AD-NNN` can
+  already foreclose one of the options — and an option this project cannot take is
+  a row in the table **marked as foreclosed, with the principle or `AD` cited**,
+  never a recommendation and never silently dropped. The user still needs to know
+  it exists and why it is off the table here.
 - **The family it belongs to.** See below — this one is never optional.
 
 A lesson that exists to unblock a choice is a different lesson from a survey of a
@@ -96,9 +107,20 @@ worth far more than confidence they cannot check.
 
 ## 2. Calibrate, once
 
-Run `ls ~/Work/lessons-learned/` first. An adjacent lesson is the best available
-evidence of what the user already knows; read it, build on it, and link it with
-`[[slug]]` instead of re-teaching it.
+Resolve the lessons directory first — section 3's block, which sets `$lessons` and
+is needed here before it is needed there. Then look at what has already been taught,
+in **two** places, because lessons are spread across projects while the deck is
+global:
+
+```bash
+ls "$lessons"/*.md 2>/dev/null                      # this project's lessons
+grep -n '^## \|^<!-- lição' ~/Work/lessons-learned/QUESTIONS.md
+```
+
+The deck's headings and their pointer comments are the index of every lesson
+anywhere, including the ones in other repos. An adjacent lesson is the best
+available evidence of what the user already knows; read it, build on it, and link
+it with `[[slug]]` instead of re-teaching it.
 
 Then at most **one** calibration question, and only if the answer would genuinely
 change how you write it. Ask anything that is genuinely unclear — which of three
@@ -107,14 +129,52 @@ not interview them about what they want taught, and do not quiz them.
 
 ## 3. Write the lesson
 
-```
-~/Work/lessons-learned/<topico-em-kebab-case>/LESSON.md
+### Where it goes
+
+The lesson belongs to the project whose decision prompted it. Resolve the
+directory before writing anything — the walk upward mirrors `sdd.py`'s own
+`find_root()`, so `teach` lands in the same project every other stage does:
+
+```bash
+d=$(pwd); lessons=""
+while [ "$d" != "/" ]; do
+  [ -d "$d/.specify" ] && { lessons="$d/.specify/lessons"; break; }
+  d=$(dirname "$d")
+done
+[ -z "$lessons" ] && r=$(git rev-parse --show-toplevel 2>/dev/null) && [ -n "$r" ] \
+  && lessons="$r/.specify/lessons"
+[ -z "$lessons" ] && lessons="$HOME/Work/lessons-learned"
+mkdir -p "$lessons"
+echo "$lessons"
 ```
 
+1. **A `.specify/` here or in any parent** → `<projeto>/.specify/lessons/`.
+2. **A git repo without the pipeline** → create `.specify/lessons/` at the git root
+   anyway. The lesson still belongs with that code.
+3. **Neither** → `~/Work/lessons-learned/`, as before.
+
+```
+$lessons/<topico-em-kebab-case>.md
+```
+
+A flat file in that directory. No directory per lesson, no `LESSON.md`: the slug is
+the filename, and it is also the `[[slug]]` other lessons link to and the
+`## <slug>` heading its cards live under in the global deck.
+
+Cases 1 and 2 put the lesson under version control. It gets committed and read by
+whoever opens the project later — which is the point, and also the bar: it has to
+stand on its own for someone who was never in this conversation.
+
 **Check for an existing lesson on this topic first**, by meaning and not by exact
-slug — `agentes-react` and `padrao-react` are the same lesson. If one exists,
-**extend it**: add to its sections, add a dated line to the header, and leave what
-is already written alone. Never create a rival file on the same subject.
+slug — `agentes-react` and `padrao-react` are the same lesson.
+
+- **In this project** → **extend it**: add to its sections, add a dated line to the
+  header, leave what is already written alone. Never a rival file on the same subject.
+- **In another project** (found via the deck's pointer comments) → it cannot be
+  extended in place; that file belongs to that repo. Read it, link it `[[slug]]`,
+  and write **only what is specific to this project** — the constraint here, the
+  decision here, why the answer differs. Re-teaching what that file already says is
+  how two lessons start contradicting each other.
 
 The bar for what goes in the file — all of it, in prose, not an outline of headings
 with a sentence under each:
@@ -128,12 +188,14 @@ with a sentence under each:
 4. **Name the tradeoff axis.** Nearly every "which option?" is one axis wearing a
    costume (latency vs. cost, coupling vs. duplication, who owns failure). Name the
    axis and the options stop needing to be memorized — they become derivable.
-5. **The options table — always, not only when the user framed a choice.** Every
-   **Escolha quando** cell states an *observable condition* — "quando o caller já
-   tem seu próprio orçamento de latência" — never "quando fizer sentido". That
-   column is the roadmap: the user should be able to read only it and decide. The
-   table carries the taught concept, the real alternatives, and the status quo row
-   from section 0 — one row each, judged on the same criteria.
+5. **The decision section — always, not only when the user framed a choice.** It
+   is a narrow two-column map followed by one subsection per option. The map carries
+   the taught concept, the real alternatives, and the status quo row from section 0
+   — one row each, judged on the same criteria. Every **Escolha quando** states an
+   *observable condition* — "quando o caller já tem seu próprio orçamento de
+   latência" — never "quando fizer sentido". That column is the roadmap: the user
+   should be able to read only it and decide. The prose that used to be crammed
+   into `Ganha`/`Custa` cells goes in the per-option subsections, where it has room.
 6. **Recommend, for their case, with the reason — and say what would change your
    mind.** A lesson that refuses to recommend leaves the user exactly as stuck as
    they started.
@@ -142,11 +204,34 @@ with a sentence under each:
 
 Depth over coverage: three things understood beat nine things listed.
 
+### Tables must fit the screen
+
+The lesson is read in `nvim`, where a table row longer than the window wraps and
+the whole table collapses into unreadable fragments — a five-column table of full
+sentences renders as garbage no matter how the renderer is configured. So:
+
+- **At most two columns**, and the whole row under ~100 characters.
+- **Cells are labels, not sentences** — a few words, no commas doing the work of a
+  period. Anything that needs a sentence belongs in prose under the table.
+- Tables are for *scanning between* options. Explaining one option is prose.
+
+Check it before reporting, on the lesson and on the deck:
+
+```bash
+awk 'length($0) > 100 && /^\|/ {print FILENAME":"FNR" — "length($0)" cols"}' \
+  "$lessons"/<topico>.md
+```
+
+Any line it prints is a broken table row. Split the content out into prose; do not
+"fix" it by shortening the words while keeping five columns.
+
 ```markdown
 # <Conceito>
 
 **Ensinado em**: <YYYY-MM-DD>
-**Por que**: <a decisão ou problema que motivou esta aula>
+**Projeto**: <nome do repo — ou `nenhum` quando a aula é global>
+**Por que**: <a decisão ou problema que motivou esta aula. Quando veio de um
+marcador, nomeie-o: `U-007 (llm-router.md) — quem é dono do retry?`>
 **Relacionado**: [[outra-licao]]
 
 ## O problema
@@ -159,12 +244,24 @@ Depth over coverage: three things understood beat nine things listed.
 <A pergunta que este conceito responde, e que outras coisas também respondem.
 Uma seção obrigatória, mesmo quando a aula foi pedida como um substantivo solto.>
 
-| Opção | Como funciona | Ganha | Custa | Escolha quando |
-|---|---|---|---|---|
-| <o conceito ensinado> | | | | |
-| <alternativa real 1> | | | | |
-| <alternativa real 2> | | | | |
-| <manter como está hoje> | | | | |
+| Opção | Escolha quando |
+|---|---|
+| <o conceito ensinado> | <condição observável, poucas palavras> |
+| <alternativa real 1> | <condição observável, poucas palavras> |
+| <alternativa real 2> | <condição observável, poucas palavras> |
+| <manter como está hoje> | <condição observável, poucas palavras> |
+
+<Uma opção que o `constitution.md` ou um `AD-NNN` já fecha para este projeto
+continua na tabela, com a condição trocada por `fechada: P-IV` ou `fechada:
+AD-014`. O usuário precisa saber que ela existe e por que não está disponível
+aqui.>
+
+### <Opção> — uma subseção por linha da tabela, na mesma ordem
+
+**Como funciona**: <o mecanismo desta opção, uma ou duas frases>
+**Ganha**: <o que ela compra, em prosa>
+**Custa**: <o preço, em prosa — incluindo o caso em que ele não se paga>
+**Escolha quando**: <a condição da tabela, agora com o porquê por trás dela>
 
 ## Recomendação
 <a escolha para o caso do usuário, o porquê, e o que mudaria essa escolha>
@@ -185,31 +282,72 @@ depends on this conversation still being in scroll-back.
 
 ## 4. Write the cards
 
-`QUESTIONS.md`, beside the lesson. `repeater`'s format, exactly:
+One deck for every lesson of every project, at `~/Work/lessons-learned/QUESTIONS.md`
+— **always there, never inside `.specify/`**, however the lesson's path resolved.
+Never a second `QUESTIONS.md` anywhere. Each lesson owns one `## <slug>` section —
+the same slug as its `.md` file — opening with a comment pointing at where that
+lesson lives:
 
 ```
+## <topico-em-kebab-case>
+<!-- lição: <caminho absoluto do arquivo da aula> -->
+
 Q: <pergunta>
+
 A: <resposta>
+
 ---
+
 Q: <pergunta>
+
+A: <resposta>
+
+---
+
+## <outro-topico>
+<!-- lição: <caminho absoluto do arquivo da aula> -->
+
+Q: <pergunta>
+
 A: <resposta>
 ```
+
+Those comments are the index of every lesson you have written anywhere — section 2
+reads them back. Keep the path absolute and correct; a pointer that lies is worse
+than none.
+
+**Slugs collide across projects.** If `## <slug>` already exists in the deck and
+its pointer names a *different* file, qualify the new one with the project:
+`## retry-ownership (ai-service)`. Never merge two projects' cards under one heading.
+
+**A card can outlive its lesson.** The repo may be archived, moved or deleted while
+the deck goes on being drilled, so no card may depend on opening the lesson to be
+answerable — no "conforme a aula", no "a tabela da lição". The pointer is for
+finding context later, never a part of the answer.
 
 `Q:` and `A:` start a line; answers may span several lines and use markdown. A line
-of exactly `---` separates cards; none is needed after the last. Verify with:
+of exactly `---` separates cards. **Always leave a blank line between `Q:` and its
+`A:`, and around every `---`** — `repeater` parses it either way, but the spaced
+form is what this deck is written in and mixing the two makes the file unreadable.
+Close a lesson's section with a `---` before the next `## ` heading.
+
+Verify with:
 
 ```bash
-repeater check --plain ~/Work/lessons-learned/<topico>
+repeater check --plain ~/Work/lessons-learned/QUESTIONS.md
 ```
 
-"Cards found" must equal the number written. If it doesn't, the format is wrong —
-fix it before reporting.
+"Cards found" must equal the whole deck — every card already in the file plus the
+ones just written. Count before appending and after; if the difference isn't the
+number of new cards, the format is wrong — fix it before reporting.
 
-**Append only.** If the file exists, read it and add the new cards at the end.
-Never edit, reorder or reformat cards already there: they carry review history in
-`repeater`'s database, and a rewritten card is a new card with its schedule reset.
-Dedupe against what is already in the file — a question already asked is not asked
-again; write a distinct, deeper card instead.
+**Append only, to the end of the file.** Read the file first. If the lesson is new,
+add its `## <slug>` heading and cards at the bottom; if you are extending an
+existing lesson, append under that lesson's existing heading. Never edit, reorder
+or reformat cards already there — not other lessons' and not this one's: they carry
+review history in `repeater`'s database, and a rewritten card is a new card with
+its schedule reset. Dedupe against the whole file, not just this lesson's section —
+a question already asked is not asked again; write a distinct, deeper card instead.
 
 | Card rule | Why |
 |---|---|
@@ -229,14 +367,35 @@ The reply is a receipt, not a lesson. At most:
 
 - The decision the user arrived with, answered in **one line** — no reasoning, no
   options, no preview of the table. That lives in the file.
-- The two paths written, and the card count.
+- The lesson's path, and the number of cards appended to the deck.
 - Anything you could not verify, named in one line so they know what to distrust.
+- **When the session came from an `[!UNCLEAR]` marker**, the resolution line ready
+  to paste — `UNCLEAR-PROTOCOL.md`'s `## Clarifications` shape, with the decision
+  left blank because it is the user's to make:
+
+```
+Para fechar U-007 em llm-router.md:
+- **U-007** — Quem é dono do retry? → <sua decisão>. *Rationale*: ver
+  .specify/lessons/retry-ownership.md
+```
+
 - How to drill:
 
 ```bash
-repeater drill ~/Work/lessons-learned/<topico>   # só esta aula
-repeater drill ~/Work/lessons-learned            # tudo
+repeater drill ~/Work/lessons-learned/QUESTIONS.md   # o deck inteiro
 ```
+
+### `teach` never writes to a pipeline artifact
+
+It reads `constitution.md`, `requirements.md` and the specs freely. It does not
+touch them. No spec edit, no marker deleted, no `## Clarifications` entry appended,
+no `sdd.py bump`, no `sdd.py status`.
+
+Two reasons, and both hold even when the answer seems obvious: at the moment the
+lesson is written **the user has not decided yet** — that is the entire point of the
+session — and resolving a marker is a versioned edit that belongs to the stage that
+owns the file, which knows whether the answer is a MINOR or a MAJOR and what it
+makes stale. `teach` hands over the line; `plan` or `implement` writes it.
 
 ## Failure modes
 
@@ -249,8 +408,14 @@ repeater drill ~/Work/lessons-learned            # tudo
 | Naming alternatives from memory, or padding the table with things that answer a different question. | Verify each one exists and is current (section 1). Two honest alternatives beat five invented ones, and the status quo row is always one of them. |
 | Writing a survey when the user was blocked on a decision. | Re-read *why now*. The options in the marker are the spine of the lesson. |
 | Citing a source you didn't fetch, or stating a version, default or limit from memory. | Fetch it, or write it flagged as uncertain — in `## Fontes` and in the closing receipt. |
-| Rewriting or reordering an existing `QUESTIONS.md`. | Append only. Existing cards carry review history. |
+| Rewriting, reordering or reformatting cards already in `QUESTIONS.md` — any lesson's. | Append only, at the end. Existing cards carry review history. |
+| A folder per lesson, a `LESSON.md`, or a `QUESTIONS.md` beside the lesson. | One flat `<topico>.md` in the root, and one shared deck at `~/Work/lessons-learned/QUESTIONS.md`. |
+| Cards written without the blank lines around `Q:`/`A:` and `---`. | The deck is written in the spaced form; match it. |
 | A second lesson file on a topic already covered. | Find it by meaning and extend it. |
+| A table with three or more columns, or cells holding full sentences. | Two columns, rows under ~100 characters, cells as labels. The explanation goes in prose under the table — a wide table renders as garbage in `nvim`. |
 | Twenty cards "to be thorough". | 5–10, weighted toward the decision table and the pitfalls. |
+| Writing to `~/Work/lessons-learned/` when a `.specify/` or a git root was found. | Run section 3's resolution block. The global directory is the last fallback, not the default. |
+| Editing a spec, deleting a marker, appending to `## Clarifications`, or running `sdd.py bump`/`status`. | Read the pipeline, never write it. Report the resolution line and let `plan`/`implement` apply it. |
+| Recommending an option the constitution or a decided `AD-NNN` already forecloses — or dropping it from the table without saying why. | Keep the row, mark it `fechada: P-IV` / `fechada: AD-014`, and recommend among what is actually available. |
 | A lesson that only makes sense with this conversation in scroll-back. | It must read standalone in six months. |
 | Interviewing the user about what they want taught. | One calibration question at most, and only when the answer changes what you write. |
