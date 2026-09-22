@@ -1,25 +1,29 @@
 return {
-  "MeanderingProgrammer/render-markdown.nvim",
-  dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
-  ft = { "markdown" },
-  opts = {
-    html = {
-      comment = {
-        -- Keep HTML comments visible instead of concealing them off-cursor.
-        conceal = false,
+  -- Markdown is rendered in the browser, not in the buffer.
+  { "MeanderingProgrammer/render-markdown.nvim", enabled = false },
+
+  {
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreview", "MarkdownPreviewStop", "MarkdownPreviewToggle" },
+    ft = { "markdown" },
+    -- mkdp#util#install lives in the plugin's autoload dir, so the plugin has
+    -- to be on the rtp before the build step can call it.
+    build = function()
+      vim.cmd([[Lazy load markdown-preview.nvim]])
+      vim.fn["mkdp#util#install"]()
+    end,
+    init = function()
+      -- Keep the tab open when leaving the buffer, and follow the cursor.
+      vim.g.mkdp_auto_close = 0
+      vim.g.mkdp_preview_options = { disable_sync_scroll = 0 }
+    end,
+    keys = {
+      {
+        "<leader>cp",
+        ft = "markdown",
+        "<cmd>MarkdownPreviewToggle<cr>",
+        desc = "Markdown Preview",
       },
-    },
-    heading = {
-      icons = function(ctx)
-        if ctx.level == 1 then
-          return ""
-        end
-        local parts = {}
-        for i = 2, ctx.level do
-          table.insert(parts, ctx.sections[i])
-        end
-        return table.concat(parts, ".") .. ". "
-      end,
     },
   },
 }
