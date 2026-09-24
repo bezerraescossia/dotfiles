@@ -56,20 +56,20 @@ These are hands-on hours from each phase's estimate table. **S** = small project
 
 | # | Phase | Core S | Core M-L | With all optional steps S | With all optional steps M-L |
 |---|-------|--------|----------|---------------------------|-----------------------------|
-| 01 | Business Understanding | 33h | 79h | 33h | 79h |
+| 01 | Business Understanding | 34h | 82h | 34h | 82h |
 | 02 | Context Engineering | 19h | 53h | 37h `[R]` | 100h `[R]` |
 | 03 | Model Selection & Customization | 22h | 50h | 38h `[R][A][FT]` | 96h `[R][A][FT]` |
 | 04 | Evaluation | 25h | 66h | 30h `[R][A]` | 79h `[R][A]` |
 | 05 | Deployment | 31h | 87h | 31h | 87h |
 | 06 | Monitoring & Maintenance (setup) | 17h | 41h | 17h | 41h |
-| | **To launch + monitoring setup** | **~147h (~4 weeks)** | **~376h (~9–10 weeks)** | **~186h (~5 weeks)** | **~482h (~12 weeks)** |
+| | **To launch + monitoring setup** | **~148h (~4 weeks)** | **~379h (~9–10 weeks)** | **~187h (~5 weeks)** | **~485h (~12 weeks)** |
 | 06 | Monitoring & Maintenance (ongoing) | ~11h/month | ~29h/month | ~11h/month | ~29h/month |
 
 Optional tags: `[R]` retrieval, `[A]` tools/agents, `[FT]` fine-tuning, `[SH]` self-hosted models. A real project picks the tags that apply, so its total falls between the core and full columns. Loop-backs between phases add rework on top.
 
 ## Main adaptations from CRISP-ML(Q)
 
-- **Business Understanding** adds real-workflow discovery, assumption/risk mapping, and a judgment-preserving spec. Data understanding shrinks to a light check.
+- **Business Understanding** adds real-workflow discovery, assumption/risk mapping, and a judgment-preserving spec. Data understanding shrinks to a light check. Once the slice is chosen, it also settles the repo, language/framework, package manager and folder structure once, so later phases don't each improvise their own.
 - **Data Engineering → Context Engineering.** The work is ingestion, chunking, metadata, retrieval and eval data, not features for training.
 - **Model Engineering → Selection & Customization.** Customization is tried roughly in order: prompting → RAG → tools/agents → fine-tuning. Reproducibility means pinned model IDs and versioned prompts, not random seeds.
 - **Evaluation** has no single accuracy number. It uses rubrics, an LLM judge calibrated against human labels, groundedness checks, and red-teaming.

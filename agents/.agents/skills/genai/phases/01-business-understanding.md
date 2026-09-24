@@ -30,12 +30,14 @@ Artifacts and prep kits are written to `.genai/artifacts/01-business-understandi
 | 01.7 | Choose the slice | DECISION | 01.6 | 0.5h | 1h |
 | 01.8 | Slice spec | HUMAN | 01.7 | 4h | 10h |
 | 01.9 | Go / pivot / stop | DECISION | 01.8 | 2h | 4h |
-| | **Total** | | | **~33h (~4 days)** | **~79h (~2 weeks)** |
+| 01.10 | Repo, stack & folder-structure decision | DECISION | 01.9 | 1h | 3h |
+| | **Total** | | | **~34h (~4 days)** | **~82h (~2 weeks)** |
 
 - Hours are **your hands-on effort**. Calendar time is usually longer because it depends on when stakeholders are available.
 - **S**: small project (single team, one workflow, ~1–2 week engagement).
 - **M-L**: medium/large project (several teams or workflows, regulated data, integrations).
 - 01.1 and 01.2 can run in parallel.
+- 01.10 depends only on 01.9, not on any Phase 02 task, so it can run in parallel with 02.0–02.3. It only gates 02.4, 03.3 and 05.1 — the first task in each later phase that actually writes code into the repo.
 
 ---
 
@@ -443,6 +445,43 @@ End the brief with **AI recommendation:** `<option>`, followed by its reasoning.
 
 ---
 
+### 01.10 Repo, stack & folder-structure decision
+
+```yaml task
+id: "01.10"
+title: Repo, stack & folder-structure decision
+role: DECISION
+depends_on: ["01.9"]
+estimate: {S: 1, M-L: 3}
+artifact: null
+optional_tag: null
+```
+
+Everything Phase 02 onward builds lands in a real repo. This task settles where and how, once, so `02.4`, `03.3` and `05.1` don't each invent it independently.
+
+**Brief** (`01.10-brief.md`), read against the approved slice spec:
+
+| Area | Options and the tradeoff each carries |
+|---|---|
+| **Language & framework** | **Python** (e.g. FastAPI) — best LLM ecosystem fit, most examples; slowest raw runtime. **Node/TypeScript** (e.g. Express/Nest) — one language with a JS frontend; thinner ML tooling. **Go** — best performance and deployment story; the thinnest LLM tooling of the three. |
+| **Package manager** | Pick the modern default for the chosen language (e.g. `uv` for Python, `pnpm`/`npm` for Node, Go modules) and say which, so no later task has to guess. |
+| **Repo layout** | **Monorepo** (e.g. a single `uv` workspace) — atomic cross-component changes, one CI; the natural default while there's one slice. **Polyrepo** — independent release cadence; only earns its cost once there are several independently-deployed services. |
+| **Folder structure** | **src-layout** (`src/<project>/...`) vs **flat** (package at repo root), whichever the language's ecosystem defaults to — plus where GenAI-specific work lives: `prompts/` (versioned prompt templates), `evals/` (eval sets, harness, rubrics — 03.3 and Phase 04 write here), `tools/` (agent tool implementations, live only if `[A]` ends up on in Phase 03). |
+
+This is deliberately narrow: LLM provider strategy (03.4b), retrieval/RAG (02.0), agent/orchestration framework (03.0, 03.7), and service topology/deployment target (05.1) are each decided later, closer to the evidence that should drive them. Don't re-decide those here.
+
+End the brief with **AI recommendation:** covering all four rows, reasoned from the slice spec's scale and whether the M-L size implies more than one service eventually.
+
+**Options**
+- **Adopt the recommendation**, as-is or amended by the user.
+- **Back to 01.8**: the spec doesn't give enough to decide (scale or integration surface still unclear). Reset it with `--cascade`.
+
+Put all four rows to the user in one `AskUserQuestion` round, your recommendation marked first on each.
+
+**Decision record**: a `## 01.10` entry in `decisions.md`, recording the chosen language/framework, package manager, repo layout, and folder structure (with concrete paths). Reopening this later (`set 01.10 todo --cascade`) resets 02.4, 03.3 and 05.1 and invalidates any code already built against the old layout — say that cost explicitly if the user asks to revisit it.
+
+---
+
 ## Quality assurance
 
 ### Requirements & constraints
@@ -466,6 +505,7 @@ End the brief with **AI recommendation:** `<option>`, followed by its reasoning.
 | Building on an untested critical assumption | Scored assumption table, with the riskiest one tested first | 01.5 |
 | First build proves nothing | Slice eligibility check against the required proof set | 01.6, 01.7 |
 | Builders over- or under-constrained | Spec with Locked / Bounded / Delegated decisions and forbidden examples | 01.8 |
+| Stack/repo choices reinvented ad hoc by whichever task touches code first | A single repo, stack & folder-structure decision, cited by every later task that first writes into the repo | 01.10 |
 | AI fills a gap with a guess | Gaps marked `GAP`, and review rules require every fact to trace to your notes | all |
 
 ### Exit gate (walked in 01.9)

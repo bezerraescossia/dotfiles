@@ -31,7 +31,7 @@ No whole task is optional. Items tagged `[R]` (retrieval), `[A]` (tools/agents) 
 | Task | Title | Role | Depends on | S | M-L |
 |------|-------|------|------------|---|-----|
 | 05.0 | Handoff review & release plan | HUMAN | 04.12 | 1h | 3h |
-| 05.1 | Serving architecture & infrastructure | AI | 05.0 | 3h | 10h |
+| 05.1 | Serving architecture & infrastructure | AI | 05.0, 01.10 | 3h | 10h |
 | 05.2 | Application integration | AI | 05.1 | 4h | 12h |
 | 05.3 | Runtime guardrails & controls | AI | 05.2 | 3h | 8h |
 | 05.4 | Resilience & fallback | AI | 05.2 | 2h | 6h |
@@ -98,7 +98,7 @@ sets_tags: []
 id: "05.1"
 title: Serving architecture & infrastructure
 role: AI
-depends_on: ["05.0"]
+depends_on: ["05.0", "01.10"]
 estimate: {S: 3, M-L: 10}
 artifact: serving-architecture.md
 optional_tag: null
@@ -107,7 +107,7 @@ sets_tags: []
 
 *CRISP-ML(Q): inference hardware.*
 
-**Plan** (`05.1-plan.md`): the target architecture, the IaC tool and repo location, **every resource that will be created and what it costs**, the environments, and the approvals it needs from you (cloud account, spend, provisioned throughput commitments).
+**Plan** (`05.1-plan.md`): the target architecture, the IaC tool and repo location **per the 01.10 decision**, **every resource that will be created and what it costs**, the environments, and the approvals it needs from you (cloud account, spend, provisioned throughput commitments).
 
 **Build**
 - [ ] Confirm the hosting paradigm from 03.4b: managed API vs self-hosted `[SH]`

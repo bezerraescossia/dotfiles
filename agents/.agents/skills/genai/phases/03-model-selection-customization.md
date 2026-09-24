@@ -43,7 +43,7 @@ Tasks whose tag is off show as `n/a`, and the checker refuses to start them. Ite
 | 03.0 | Handoff review & agentic scope | DECISION | 02.11 | 1h | 2h |
 | 03.1 | Model requirements | HUMAN | 03.0 | 2h | 4h |
 | 03.2 | Candidate shortlist | AI | 03.1 | 2h | 4h |
-| 03.3 | Dev eval harness | AI | 03.0 | 4h | 10h |
+| 03.3 | Dev eval harness | AI | 03.0, 01.10 | 4h | 10h |
 | 03.4 | Baseline bake-off | AI | 03.2, 03.3 | 2.5h | 7h |
 | 03.4b | Choose primary & fallback | DECISION | 03.4 | 0.5h | 1h |
 | 03.5 | Prompt engineering | AI | 03.4b | 4h | 10h |
@@ -190,7 +190,7 @@ sets_tags: []
 id: "03.3"
 title: Dev eval harness
 role: AI
-depends_on: ["03.0"]
+depends_on: ["03.0", "01.10"]
 estimate: {S: 4, M-L: 10}
 artifact: eval-harness.md
 optional_tag: null
@@ -199,7 +199,7 @@ sets_tags: []
 
 *CRISP-ML(Q): define quality metrics, collect metadata.*
 
-**Plan** (`03.3-plan.md`): the harness's repo location and shape, the automatic checks it will implement, the experiment log format, the expected token spend of a full dev run, and what it needs from you (API keys, a spend cap).
+**Plan** (`03.3-plan.md`): the harness's repo location and shape **per the 01.10 decision** (it lives under `evals/`), the automatic checks it will implement, the experiment log format, the expected token spend of a full dev run, and what it needs from you (API keys, a spend cap).
 
 **Build**
 - [ ] Script a runner that executes a configuration (model + prompt + params + context config) over the **dev** set

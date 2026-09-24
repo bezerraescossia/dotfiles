@@ -42,7 +42,7 @@ Tasks tagged **`[R]`** apply only **if the slice needs retrieval**, meaning the 
 | 02.2 | Data profiling & quality | AI | 02.1 | 4h | 12h |
 | 02.3 | Sensitivity, PII & access control | HUMAN | 02.2 | 3h | 8h |
 | 02.9 | Eval data | HUMAN | 02.2, 02.3 | 4h | 12h |
-| 02.4 | Ingestion & parsing pipeline `[R]` | AI | 02.3 | 6h | 16h |
+| 02.4 | Ingestion & parsing pipeline `[R]` | AI | 02.3, 01.10 | 6h | 16h |
 | 02.5 | Chunking & enrichment `[R]` | AI | 02.4, 02.9 | 3h | 8h |
 | 02.6 | Indexing & retrieval `[R]` | AI | 02.5 | 4h | 10h |
 | 02.7 | Freshness & lifecycle `[R]` | HUMAN | 02.6 | 2h | 5h |
@@ -225,14 +225,14 @@ sets_tags: []
 id: "02.4"
 title: Ingestion & parsing pipeline
 role: AI
-depends_on: ["02.3"]
+depends_on: ["02.3", "01.10"]
 estimate: {S: 6, M-L: 16}
 artifact: ingestion-pipeline.md
 optional_tag: R
 sets_tags: []
 ```
 
-**Plan** (`02.4-plan.md`): the parser per format, the pipeline's shape and repo location, the versioning tool (e.g. DVC + git), the data tests, and what it needs from you (credentials, storage, a budget for OCR).
+**Plan** (`02.4-plan.md`): the parser per format, the pipeline's shape and repo location **per the 01.10 decision**, the versioning tool (e.g. DVC + git), the data tests, and what it needs from you (credentials, storage, a budget for OCR).
 
 **Build**
 - [ ] Choose a parser for each format (PDF, HTML, Office, tables, OCR for scans). **Test it on the hard samples from 02.2**
