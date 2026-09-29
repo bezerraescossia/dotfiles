@@ -21,7 +21,7 @@ All six phase files carry task blocks, so all six are executable. Phase 06 also 
 CHECK="uv run -q ~/.claude/skills/genai/scripts/check.py"
 $CHECK status | next | check
 $CHECK set <id> <status> [--hours N] [--reason "..."] [--cascade] [--tag NAME=yes|no]
-$CHECK project active|stopped|operating|completed
+$CHECK project active|stopped|operating|completed [--language "<value>"]
 $CHECK cycle list [--kinds] | start <kind> | close <file|kind> [--hours N]
 ```
 
@@ -29,6 +29,7 @@ $CHECK cycle list [--kinds] | start <kind> | close <file|kind> [--hours N]
 - `set` validates the whole resulting state and **refuses to save** it if anything is wrong: an unmet dependency, a pending DECISION upstream, a missing artifact, a missing decision-log entry, or a skip with no reason. A refusal is the pipeline working. Report it, and fix the cause. Never work around it.
 - A task absent from `state.yaml` is `todo`.
 - `project operating` is refused while any task is unfinished. It is the consequence of 06.10, not a shortcut past the pipeline.
+- Whenever a DECISION reaches `done`, or any task is reopened with `--cascade`, and `.genai/PROJECT-PREVIEW.md` exists: ask once whether to refresh it with that outcome folded in (see `## preview`). Never rewrite it silently.
 
 Statuses:
 - HUMAN: `todo → prepared → in-progress → review → done` (review → in-progress when changes are needed, `skipped` with a reason)
@@ -57,6 +58,7 @@ Until the tag is settled, its tasks are blocked. When it is off, they show as `n
 .genai/
 ├── state.yaml        # written only by check.py
 ├── decisions.md      # decision log, one "## <id> — <title> (date)" entry per DECISION
+├── PROJECT-PREVIEW.md  # optional, ungated first-impression plan — see `## preview`
 ├── artifacts/<phase>/  # <id>-prep.md, <id>-plan.md, <id>-brief.md, approved artifacts
 ├── ops/              # <date>-<kind>.md, one per cycle run (Phase 06, written by check.py)
 ├── inbox/            # the user's raw notes/transcripts — git-ignored
@@ -78,11 +80,36 @@ Until the tag is settled, its tasks are blocked. When it is off, they show as `n
 
 Run `$CHECK status`. Summarize in a few lines: tasks done/total, estimated vs actual hours, what is active, what is blocked and by what (especially pending DECISIONs), and what is ready.
 
+## Language
+
+The project's working language follows its inbox, not the skill's own English prose.
+
+- **Detect once.** The first time real inbox content is read — either the `preview` trigger below or a HUMAN task's `in-progress` stage — check `$CHECK status` for `project.language`. If it's unset, read the dominant language of the inbox file(s) just used and persist it: `$CHECK project --language "<value>"` (e.g. `pt-BR`, `Portuguese (Brazil)`).
+- **Apply it everywhere it matters.** Every AI-authored artifact's prose — prep kits, plans, briefs, `decisions.md` entries (the decision/rationale/evidence text), and the preview — is written in that language.
+- **Except the shared infrastructure.** Task ids, phase-file vocabulary (HUMAN/AI/DECISION, task titles exactly as the phase files spell them), `decisions.md`'s template field labels (`**Decision:**`, `**Rationale:**`, etc.), and this checker's own CLI output stay in English — they're scannable structure shared across every genai project, not this project's content.
+- **A later mismatch is a question, not a guess.** If a new inbox file reads like a different language than the persisted one, stop and ask the user whether to switch `project.language`, rather than silently keeping the old value or silently switching.
+
+## `preview`
+
+The first time `next` runs while `01.0` is still `todo` and `.genai/inbox/` already holds something, write a first-impression project plan before doing anything else — no permission needed, since nothing here is gated or authoritative.
+
+1. Read every file in `inbox/`, and (per `## Language` above) detect and persist the project's language if it isn't set yet.
+2. Write `.genai/PROJECT-PREVIEW.md`, opening with a banner that cannot be missed:
+   > ⚠️ **Preliminary** — written before Phase 01 fieldwork, from the inbox context alone. Nothing below is a decision. Every project-specific read is marked `(preliminary — settled at <task id>)`, naming the task that will actually settle it.
+3. Body: the same two things demonstrated for this exact case —
+   - a **phase-by-phase hour-rollup summary table**, using each task's built-in S/M-L estimate for this project's size, captioned that hours are hands-on effort, not calendar time
+   - a **granular per-phase activity breakdown** (every task, one line each, in plain language), personalized to what the inbox actually describes — e.g. naming which task a specific system in the project maps to — always with the `(preliminary — settled at <id>)` marker
+4. Stop there. Don't also resolve or advance `01.0` (or any task) in this same `next` call — that happens on the next invocation, which can then read the preview as context.
+
+This file is never read or validated by `check.py`, never blocks anything, and is not one of the `artifacts/<phase>/` deliverables — it's advisory only, sitting at the `.genai/` root. See "The checker" above for how it gets refreshed later.
+
 ## `skip <id> "<reason>"`
 
 `$CHECK set <id> skipped --reason "<reason>"`. Skipping is for tasks that don't apply, e.g. optional-tag tasks. If the user wants to skip a DECISION, refuse and explain why: decisions are the gates.
 
 ## `next [id]`
+
+**First**, if `.genai/PROJECT-PREVIEW.md` doesn't exist yet, `01.0` is `todo`, and `.genai/inbox/` has any files: run the `## preview` steps and stop. Don't resolve or advance a task in this same call.
 
 **Resolve the target.**
 - With an id, use it.

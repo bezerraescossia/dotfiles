@@ -48,6 +48,8 @@ The framework is also a Claude Code skill ([`SKILL.md`](SKILL.md)). It runs a pr
 
 State is kept in `.genai/state.yaml` and changed only through [`scripts/check.py`](scripts/check.py). It refuses any change that would leave the state invalid: unmet dependencies, a pending decision upstream, a missing artifact or decision-log entry, or a skip with no reason. `.genai/inbox/` is git-ignored because raw notes are often sensitive.
 
+Two more things happen automatically. **Language**: the first time real inbox content is read, the AI detects its language and persists it as `project.language` (`$CHECK project --language "<value>"`); every artifact's prose then follows suit, while task ids, phase-file vocabulary and this checker's own output stay in English. **Preview**: the first `next` call made once the inbox holds something (and before 01.0 is touched) writes an ungated, non-authoritative `.genai/PROJECT-PREVIEW.md` — a phase-by-phase hour summary plus a granular, personalized activity breakdown, every project-specific read flagged as preliminary. It's never validated by the checker, and only refreshed on request (offered whenever a DECISION completes).
+
 A task is defined by its fenced `yaml task` block (`id`, `title`, `role`, `depends_on`, `estimate`, `artifact`, `optional_tag`, `sets_tags`) plus the prose sections its role needs. A cycle is defined by a `yaml cycle` block (`kind`, `title`, `estimate`) followed by the checklist that `cycle start` copies into `.genai/ops/`. See Phase 01 for the task pattern and Phase 06 for cycles.
 
 ## Effort overview

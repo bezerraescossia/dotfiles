@@ -427,7 +427,10 @@ def cmd_status(args) -> int:
     state = load_state(root)
     proj = state["project"]
     size = proj.get("size")
-    print(f"Project: {proj.get('name') or '(unnamed)'} · size {size} · status {proj.get('status', 'active')}")
+    header = f"Project: {proj.get('name') or '(unnamed)'} · size {size} · status {proj.get('status', 'active')}"
+    if proj.get("language"):
+        header += f" · language {proj['language']}"
+    print(header)
     deciders = tag_deciders(tasks)
     if deciders:
         shown = []
@@ -621,7 +624,10 @@ def _reset_dependants(tasks: dict[str, Task], state: dict, tid: str) -> None:
 
 def cmd_project(args) -> int:
     root = Path(args.root)
-    if args.status not in PROJECT_STATUSES:
+    if not args.status and not args.language:
+        print("nothing to set — pass a status, --language, or both")
+        return 1
+    if args.status and args.status not in PROJECT_STATUSES:
         print(f"status must be one of {sorted(PROJECT_STATUSES)}")
         return 1
     tasks, _, rep = load_tasks()
@@ -634,10 +640,16 @@ def cmd_project(args) -> int:
         if left:
             print(f"cannot operate with {len(left)} unfinished task(s): {', '.join(left[:5])}…")
             return 1
-    state["project"]["status"] = args.status
+    changed = []
+    if args.status:
+        state["project"]["status"] = args.status
+        changed.append(f"status → {args.status}")
+    if args.language:
+        state["project"]["language"] = args.language
+        changed.append(f"language → {args.language}")
     if not _commit(root, tasks, state, rep):
         return 1
-    print(f"project → {args.status}")
+    print("project: " + ", ".join(changed))
     return 0
 
 
@@ -741,7 +753,8 @@ def main() -> int:
     s.add_argument("--tag", action="append", metavar="NAME=yes|no",
                    help="settle an optional tag this DECISION owns (repeatable)")
     pr = sub.add_parser("project")
-    pr.add_argument("status")
+    pr.add_argument("status", nargs="?", choices=sorted(PROJECT_STATUSES))
+    pr.add_argument("--language", help="language for generated artifact prose, e.g. 'pt-BR' or 'Portuguese (Brazil)'")
     c = sub.add_parser("cycle")
     c.add_argument("action", choices=["start", "close", "list"])
     c.add_argument("kind", nargs="?", help="cycle kind, or the ops file when closing")
